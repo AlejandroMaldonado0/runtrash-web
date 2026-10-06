@@ -1,0 +1,18 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+
+# Secretos (NUNCA subir esto al repositorio)
+.env
+.env.local
+.env.production
+servidor/.env
+
+# Fotos de los reportes (se regeneran en cada despliegue)
+servidor/uploads/*
+!servidor/uploads/.gitkeep
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log

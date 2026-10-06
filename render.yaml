@@ -1,0 +1,44 @@
+# =========================================================
+# RunTrash · Despliegue en Render
+# =========================================================
+# Este archivo permite desplegar con un solo clic en Render.
+# La base de datos y las claves se configuran en el panel de
+# Render (Environment), NO se escriben aquí.
+#
+# Documentación paso a paso: DEPLOY.md
+# =========================================================
+
+services:
+  - type: web
+    name: runtrash
+    runtime: node
+    plan: free
+    region: ohio
+    rootDir: .
+    buildCommand: npm install --prefix servidor
+    startCommand: npm run start:prod --prefix servidor
+    healthCheckPath: /api/prueba
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Obligatorio: la URL de Neon o Supabase
+      - key: DATABASE_URL
+        sync: false
+      # El frontend se sirve desde este mismo servicio
+      - key: FRONTEND_DIR
+        value: /opt/render/project/src
+      # Necesario para que los limites de peticiones funcionen detras del proxy
+      - key: TRUST_PROXY
+        value: "true"
+      # La clave del administrador (minimo 8 caracteres)
+      - key: ADMIN_NAME
+        value: Administrador RunTrash
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Sin servidor de correo, el codigo se muestra en pantalla
+      - key: EXPOSER_CODIGO_RECUPERACION
+        value: "true"

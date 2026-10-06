@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#073c23">
+<meta name="description" content="Panel empresarial de RunTrash para gestionar, asignar y exportar reportes.">
+<link rel="icon" href="logos/logo.png" type="image/png">
+<title>RunTrash - Empresa</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+<script src="https://leafletjs.com/plugins/leaflet-heat/leaflet-heat.js" defer></script>
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script src="ui.js" defer></script>
+<script src="features.js" defer></script>
+</head>
+<body class="dashboard-page role-company">
+<a class="skip-link" href="#contenidoPrincipal">Saltar al contenido</a>
+
+<div class="app">
+    <button class="sidebar-backdrop" type="button" data-sidebar-backdrop aria-label="Cerrar menú"></button>
+
+    <aside class="sidebar" id="sidebar" data-sidebar>
+        <button class="sidebar-close" type="button" data-sidebar-close aria-label="Cerrar menú">×</button>
+        <div class="sidebar-logo"><img src="logos/logo.png" alt="RunTrash"></div>
+
+        <div class="user-box">
+            <div class="user-icon" aria-hidden="true">🏢</div>
+            <div class="user-info"><strong>Empresa</strong><span>Empresa RunTrash</span></div>
+        </div>
+
+        <nav class="menu" aria-label="Navegación principal">
+            <a href="#" class="active" aria-current="page" onclick="irAInicio(this);return false"><span class="menu-icon">🏠</span>Inicio</a>
+            <a href="#reportes" onclick="irAReportes(this,'all');return false"><span class="menu-icon">📋</span>Reportes</a>
+            <a href="#reportes" onclick="irAReportes(this,'sin_asignar');return false"><span class="menu-icon">📤</span>Asignar operario</a>
+            <a href="#analitica" onclick="irAAnalitica(this);return false"><span class="menu-icon">📊</span>Estadísticas</a>
+            <a href="#reportes" onclick="irAReportes(this,'completado');return false"><span class="menu-icon">🕘</span>Historial</a>
+            <a href="#" onclick="mostrarPerfil();return false"><span class="menu-icon">👤</span>Mi perfil</a>
+        </nav>
+
+        <div class="logout"><a href="index.html" onclick="cerrarSesion();return false"><span class="menu-icon">🚪</span>Cerrar sesión</a></div>
+    </aside>
+
+    <main class="main" id="contenidoPrincipal" tabindex="-1">
+        <div class="topbar">
+            <button class="menu-toggle" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menú">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div class="welcome">
+                <div class="welcome-copy">
+                    <h1>Panel de gestión empresarial</h1>
+                    <p>Coordina reportes y envíalos al equipo operativo.</p>
+                    <span class="today" data-current-date></span>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <span class="service-status">Servicio activo</span>
+                <button class="notification" type="button" onclick="mostrarNotificaciones()" aria-label="Ver notificaciones">
+                    🔔
+                    <span class="notification-count" id="notificationCount" hidden>0</span>
+                </button>
+            </div>
+        </div>
+
+        <section class="company-card">
+            <h2>🏢 Gestión de reportes</h2>
+            <p>Consulta los reportes, asigna tareas, analiza la demanda de los últimos 15 días y exporta resultados.</p>
+            <div class="company-card-footer">
+                <span>Distribución automática por carga disponible</span>
+                <button class="auto-assign-button" id="autoAssignButton" type="button" onclick="asignarAutomaticamente()">⚡ Asignar automáticamente</button>
+            </div>
+        </section>
+
+        <section class="stats" aria-label="Resumen de reportes">
+            <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-info"><span>Total</span><strong id="statTotal">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-info"><span>Sin asignar</span><strong id="statPendientes">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-info"><span>En proceso</span><strong id="statProceso">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-info"><span>Completados</span><strong id="statCompletados">0</strong></div></div>
+        </section>
+
+        <section class="section company-map-section" id="mapaReportes">
+            <div class="section-header company-map-header">
+                <div>
+                    <h2>Mapa de reportes en tiempo real</h2>
+                    <p class="section-subtitle">Visualiza la concentración de residuos y abre cada punto para gestionarlo.</p>
+                </div>
+                <div class="section-actions">
+                    <span class="filter-badge" id="mapReportCount">0 reportes</span>
+                    <button class="toolbar-button" type="button" onclick="irAReportes(null,'completado')">Ver historial →</button>
+                </div>
+            </div>
+
+            <div class="map-filters" role="group" aria-label="Filtrar mapa por estado">
+                <button class="map-filter active" type="button" data-map-filter="all" onclick="filtrarMapa('all',this)">Todos</button>
+                <button class="map-filter pending" type="button" data-map-filter="pendiente" onclick="filtrarMapa('pendiente',this)">Pendientes</button>
+                <button class="map-filter progress" type="button" data-map-filter="en proceso" onclick="filtrarMapa('en proceso',this)">En proceso</button>
+                <button class="map-filter done" type="button" data-map-filter="completado" onclick="filtrarMapa('completado',this)">Completados</button>
+            </div>
+
+            <div class="company-map-layout">
+                <div class="map-shell">
+                    <div id="companyMap" aria-label="Mapa interactivo de reportes"></div>
+                    <div class="map-loading" id="companyMapLoading">Cargando mapa...</div>
+                    <div class="map-hotspot-card" id="mapHotspotCard" hidden>
+                        <span class="map-hotspot-icon" aria-hidden="true">📍</span>
+                        <div><small>Mayor concentración</small><strong id="mapHotspotSector">Sin datos</strong><p id="mapHotspotText">Aún no hay suficientes reportes.</p></div>
+                    </div>
+                    <div class="map-legend">
+                        <span><i class="pending"></i>Pendiente</span>
+                        <span><i class="progress"></i>En proceso</span>
+                        <span><i class="done"></i>Completado</span>
+                    </div>
+                    <div class="map-zone-legend"><strong>Zonas:</strong><span class="zone-high">Mayor concentración</span><span class="zone-medium">Intermedia</span><span class="zone-low">Menor concentración</span></div>
+                </div>
+
+                <aside class="map-report-panel" aria-label="Reportes visibles en el mapa">
+                    <div class="map-panel-header"><div><span>Reportes visibles</span><strong id="mapVisibleCount">0</strong></div><button type="button" onclick="refrescarMapa()" aria-label="Actualizar mapa">↻</button></div>
+                    <div class="map-panel-list" id="mapReportList"></div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section analytics-section" id="analitica">
+            <div class="section-header">
+                <div>
+                    <h2>Estadísticas por sector</h2>
+                    <p class="section-subtitle">Demanda de reportes en los últimos 15 días.</p>
+                </div>
+                <span class="filter-badge">Últimos 15 días</span>
+            </div>
+            <div class="analytics-overview">
+                <div><span>Reportes recientes</span><strong id="analyticsTotal">0</strong></div>
+                <div><span>Sectores afectados</span><strong id="analyticsSectors">0</strong></div>
+                <div><span>Localidad más afectada</span><strong id="analyticsTopSector">—</strong></div>
+            </div>
+            <div class="sector-list" id="analisisSectores" aria-live="polite"></div>
+        </section>
+
+        <section class="section reports-section" id="reportes">
+            <div class="section-header reports-header">
+                <div>
+                    <h2 id="reportesTitulo">Reportes recibidos</h2>
+                    <p class="section-subtitle" id="reportesSubtitle">Los reportes aparecen ordenados del más reciente al más antiguo.</p>
+                </div>
+                <div class="section-actions">
+                    <span class="filter-badge" id="filtroActivo">Todos</span>
+                    <button class="toolbar-button" type="button" onclick="exportarExcel()" title="Exportar a Excel">📗 Excel</button>
+                    <button class="toolbar-button" type="button" onclick="exportarPDF()" title="Exportar o imprimir PDF">📕 PDF</button>
+                </div>
+            </div>
+            <div id="listaReportes" aria-live="polite"></div>
+        </section>
+    </main>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo" aria-hidden="true" onclick="cerrarModal(event)">
+    <div class="modal-card" id="modalCard">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Detalle del reporte</h3>
+            <button class="close" type="button" aria-label="Cerrar ventana" onclick="cerrarModal()">×</button>
+        </div>
+        <div id="modalContenido"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*
+Base de la API, en este orden de prioridad:
+  1. ?api=https://servidor...  (parametro manual, para pruebas)
+  2. window.RUNTRASH_API      (config.js, util al desplegar)
+  3. mismo origen             (todo junto en un solo dominio)
+  4. localhost:3000           (solo al abrir el archivo con doble clic)
+*/
+const API = (new URLSearchParams(location.search).get("api")
+    || window.RUNTRASH_API
+    || (location.protocol === "file:" ? "http://localhost:3000" : "")
+    || location.origin).replace(/\/+$/, "");
+let features;
+let reportes = [];
+let operarios = [];
+let notificaciones = { notificaciones: [], noLeidas: 0 };
+let filtroActual = "all";
+let mapaFiltro = "all";
+let mapaPrincipal = null;
+let capaMarcadores = null;
+let capaZonas = null;
+let capaCalor = null;
+let usuarioActual = obtenerUsuario();
+let toastTimer = null;
+
+function obtenerUsuario() {
+    try {
+        const guardado = localStorage.getItem("runtrash_user");
+        if (guardado) return JSON.parse(guardado);
+    } catch (error) {
+        console.warn("No se pudo leer la sesión:", error);
+    }
+
+    const id = new URLSearchParams(location.search).get("usuario_id");
+    return id ? { id: Number(id), nombre: "Empresa" } : null;
+}
+
+function textoEstado(estado) {
+    return estado === "pendiente" ? "Pendiente" : estado === "en proceso" ? "En proceso" : "Completado";
+}
+
+function claseEstado(estado) {
+    return estado === "pendiente" ? "pending" : estado === "en proceso" ? "progress" : "done";
+}
+
+function fechaBonita(fecha) {
+    return fecha ? new Date(fecha).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "";
+}
+
+function reporteSeguro(reporte) {
+    return {
+        ...reporte,
+        tipo: features.escapeHTML(reporte.tipo),
+        ubicacion: features.escapeHTML(reporte.ubicacion),
+        localidad: features.escapeHTML(reporte.localidad || "Sin localidad"),
+        descripcion: features.escapeHTML(reporte.descripcion),
+        ciudadano: features.escapeHTML(reporte.ciudadano || "Sin información"),
+        operario: features.escapeHTML(reporte.operario || "Sin asignar")
+    };
+}
+
+async function cargarDatos(silencioso = false, notificar = true) {
+    try {
+        const operatorURL = usuarioActual?.empresa_id
+            ? `${API}/api/operarios?empresa_id=${encodeURIComponent(usuarioActual.empresa_id)}`
+            : `${API}/api/operarios`;
+
+        const [reportsResponse, operatorsResponse] = await Promise.all([
+            features.apiFetch(`${API}/api/reportes`),
+            features.apiFetch(operatorURL)
+        ]);
+        const reportsData = await reportsResponse.json();
+        const operatorsData = await operatorsResponse.json();
+
+        if (!reportsResponse.ok) throw new Error(reportsData.mensaje || "No se pudieron cargar los reportes.");
+        if (!operatorsResponse.ok) throw new Error(operatorsData.mensaje || "No se pudieron cargar los operarios.");
+
+        const anteriores = new Map(reportes.map((report) => [report.id, report.estado]));
+        const firstLoad = reportes.length === 0 && !silencioso;
+        reportes = reportsData.reportes || [];
+        operarios = operatorsData.operarios || [];
+
+        if (notificar && !firstLoad) {
+            const nuevos = reportes.filter((report) => !anteriores.has(report.id));
+            if (nuevos.length) {
+                features.notify(
+                    "Nuevo reporte recibido",
+                    `${nuevos.length} reporte(s) necesitan revisión.`
+                );
+            }
+        }
+
+        renderReportes();
+        actualizarEstadisticas();
+        renderAnalytics();
+        actualizarNotificaciones();
+        actualizarMapa();
+    } catch (error) {
+        console.error(error);
+        if (!silencioso) mostrarToast(error.message || "No se pudieron cargar los datos.");
+    }
+}
+
+function reportesParaMapa() {
+    return mapaFiltro === "all"
+        ? reportes
+        : reportes.filter((report) => report.estado === mapaFiltro);
+}
+
+function estadoIconoMapa(estado) {
+    return estado === "completado" ? "✓" : estado === "en proceso" ? "↻" : "!";
+}
+
+function actualizarContadoresMapa() {
+    const filtrados = reportesParaMapa();
+    const located = filtrados.filter((report) => report.latitud && report.longitud);
+    document.getElementById("mapReportCount").textContent = `${filtrados.length} reporte${filtrados.length === 1 ? "" : "s"}`;
+    document.getElementById("mapVisibleCount").textContent = located.length;
+}
+
+function inicializarMapa() {
+    const loading = document.getElementById("companyMapLoading");
+
+    if (!window.L) {
+        loading.hidden = false;
+        loading.innerHTML = '<div style="text-align:center"><strong>No se pudo cargar el mapa.</strong><br><button class="toolbar-button" style="margin-top:10px" onclick="abrirMapaCompleto()">Abrir en Google Maps</button></div>';
+        renderListaMapa(reportesParaMapa().filter((report) => report.latitud && report.longitud));
+        return;
+    }
+
+    loading.hidden = false;
+    mapaPrincipal = L.map("companyMap", {
+        zoomControl: false,
+        attributionControl: true
+    }).setView([4.7110, -74.0721], 11);
+
+    L.control.zoom({ position: "bottomright" }).addTo(mapaPrincipal);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: "Mapa &copy; Esri"
+    }).addTo(mapaPrincipal);
+
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
+        attribution: ""
+    }).addTo(mapaPrincipal);
+
+    capaMarcadores = L.layerGroup().addTo(mapaPrincipal);
+    capaZonas = L.layerGroup().addTo(mapaPrincipal);
+    if (typeof L.heatLayer === "function") {
+        capaCalor = L.heatLayer([], {
+            radius: 34,
+            blur: 24,
+            minOpacity: 0.22,
+            maxZoom: 16,
+            gradient: {
+                0.2: "#2fa85f",
+                0.55: "#f28c28",
+                1: "#e5484d"
+            }
+        }).addTo(mapaPrincipal);
+    }
+
+    loading.hidden = true;
+    renderizarCapasMapa(true);
+}
+
+function actualizarMapa(ajustarVista = false) {
+    actualizarContadoresMapa();
+    if (!mapaPrincipal) {
+        inicializarMapa();
+        return;
+    }
+    renderizarCapasMapa(ajustarVista);
+}
+
+function localidadParaMapa(report) {
+    const declarada = String(report.localidad || "").trim();
+    if (declarada && declarada !== "Por geolocalizar") return declarada;
+
+    const latitude = Number(report.latitud);
+    if (latitude >= 4.68) return "Zona norte";
+    if (latitude >= 4.62) return "Zona centro";
+    return "Zona sur";
+}
+
+function gruposPorLocalidad(lista) {
+    const grupos = new Map();
+
+    lista.filter((report) => report.latitud && report.longitud).forEach((report) => {
+        const localidad = localidadParaMapa(report);
+        if (!grupos.has(localidad)) grupos.set(localidad, []);
+        grupos.get(localidad).push(report);
+    });
+
+    return [...grupos.entries()]
+        .map(([localidad, reports]) => ({
+            localidad,
+            reports,
+            total: reports.length,
+            latitude: reports.reduce((sum, report) => sum + Number(report.latitud), 0) / reports.length,
+            longitude: reports.reduce((sum, report) => sum + Number(report.longitud), 0) / reports.length
+        }))
+        .sort((a, b) => b.total - a.total || a.localidad.localeCompare(b.localidad, "es"));
+}
+
+function coloresPorLocalidad() {
+    const grupos = gruposPorLocalidad(reportes);
+    return new Map(grupos.map((group, index) => {
+        const rank = grupos.length === 1
+            ? "high"
+            : grupos.length === 2
+                ? (index === 0 ? "high" : "low")
+                : index === 0 ? "high" : index === 1 ? "medium" : "low";
+        return [group.localidad, rank];
+    }));
+}
+
+function renderZonasMapa(located) {
+    if (!capaZonas) return;
+    capaZonas.clearLayers();
+    const colorMap = coloresPorLocalidad();
+    const palette = {
+        high: "#e5484d",
+        medium: "#f28c28",
+        low: "#2fa85f"
+    };
+
+    gruposPorLocalidad(located).forEach((group) => {
+        const rank = colorMap.get(group.localidad) || "low";
+        const color = palette[rank];
+        const radius = Math.min(1800, 350 + group.total * 220);
+        const zone = L.circle([group.latitude, group.longitude], {
+            radius,
+            color,
+            weight: 2,
+            opacity: 0.72,
+            fillColor: color,
+            fillOpacity: 0.13,
+            dashArray: rank === "high" ? undefined : "6 7"
+        });
+        zone.bindTooltip(`${group.localidad}: ${group.total} reporte${group.total === 1 ? "" : "s"}`, {
+            permanent: true,
+            direction: "top",
+            className: "zone-tooltip",
+            opacity: 0.95
+        });
+        zone.addTo(capaZonas);
+
+        const label = L.marker([group.latitude, group.longitude], {
+            zIndexOffset: 450,
+            icon: L.divIcon({
+                className: "",
+                html: `<div class="locality-zone-marker zone-${rank}"><strong>${group.total}</strong><small>${features.escapeHTML(group.localidad)}</small></div>`,
+                iconSize: [84, 40],
+                iconAnchor: [42, 20]
+            })
+        });
+        label.addTo(capaZonas);
+    });
+}
+
+function renderizarCapasMapa(ajustarVista) {
+    const filtrados = reportesParaMapa();
+    const located = filtrados.filter((report) => report.latitud && report.longitud);
+    const bounds = [];
+
+    capaMarcadores.clearLayers();
+    renderZonasMapa(located);
+    if (capaCalor) capaCalor.setLatLngs([]);
+
+    located.forEach((report) => {
+        const latitude = Number(report.latitud);
+        const longitude = Number(report.longitud);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+
+        bounds.push([latitude, longitude]);
+        const marker = L.marker([latitude, longitude], {
+            icon: L.divIcon({
+                className: "",
+                html: `<div class="report-map-marker ${claseEstado(report.estado)}"><span>${estadoIconoMapa(report.estado)}</span></div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -14]
+            })
+        });
+
+        marker.bindPopup(`
+            <div class="map-popup">
+                <strong>${features.escapeHTML(report.tipo)}</strong>
+                <span>📍 ${features.escapeHTML(localidadParaMapa(report))}</span>
+                <small>${features.escapeHTML(textoEstado(report.estado))} · ${features.relativeTime(report.fecha)}</small>
+                <button type="button" onclick="abrirReporteMapa(${Number(report.id)})">Ver reporte</button>
+            </div>
+        `);
+        marker.addTo(capaMarcadores);
+    });
+
+    if (capaCalor) {
+        capaCalor.setLatLngs(located.map((report) => [
+            Number(report.latitud),
+            Number(report.longitud),
+            report.estado === "pendiente" ? 1 : report.estado === "en proceso" ? 0.72 : 0.38
+        ]));
+    }
+
+    if (bounds.length && (ajustarVista || !mapaPrincipal._runTrashMapFitted)) {
+        mapaPrincipal.fitBounds(bounds, { padding: [48, 48], maxZoom: 15 });
+        mapaPrincipal._runTrashMapFitted = true;
+    } else if (!bounds.length) {
+        mapaPrincipal.setView([4.7110, -74.0721], 11);
+    }
+
+    renderListaMapa(located);
+    renderHotspotMapa();
+    window.setTimeout(() => mapaPrincipal?.invalidateSize(), 100);
+}
+
+function renderListaMapa(located) {
+    const container = document.getElementById("mapReportList");
+    if (!located.length) {
+        container.innerHTML = '<div class="empty-state compact-empty"><span class="empty-state-icon">🗺️</span><strong>Sin puntos para mostrar</strong><p>Los reportes con coordenadas aparecerán aquí.</p></div>';
+        return;
+    }
+
+    container.innerHTML = located.slice(0, 30).map((report) => `
+        <button class="map-panel-item" type="button" onclick="abrirReporteMapa(${Number(report.id)})">
+            <span>${estadoIconoMapa(report.estado)}</span>
+            <div><strong>${features.escapeHTML(report.tipo)}</strong><small>${features.escapeHTML(localidadParaMapa(report))}<br>${features.relativeTime(report.fecha)}</small></div>
+            <span class="status ${claseEstado(report.estado)}">${features.escapeHTML(textoEstado(report.estado))}</span>
+        </button>`).join("");
+}
+
+function renderHotspotMapa() {
+    const hotspots = gruposPorLocalidad(reportesParaMapa());
+    const hotspot = hotspots[0];
+    const card = document.getElementById("mapHotspotCard");
+
+    if (!hotspot) {
+        card.hidden = true;
+        return;
+    }
+
+    const recommended = operarios.filter((operator) => operator.zona_asignada === hotspot.localidad).length;
+    card.hidden = false;
+    document.getElementById("mapHotspotSector").textContent = hotspot.localidad;
+    document.getElementById("mapHotspotText").textContent = recommended
+        ? `${hotspot.total} reportes. Se recomiendan ${recommended} operario${recommended === 1 ? "" : "s"} para la zona.`
+        : `${hotspot.total} reportes. No hay operarios asignados a esta localidad.`;
+}
+
+function filtrarMapa(filter, button) {
+    mapaFiltro = filter;
+    document.querySelectorAll(".map-filter").forEach((item) => item.classList.remove("active"));
+    button?.classList.add("active");
+    actualizarMapa(true);
+}
+
+function refrescarMapa() {
+    if (!mapaPrincipal) inicializarMapa();
+    else renderizarCapasMapa(true);
+}
+
+function abrirReporteMapa(id) {
+    verReporte(id);
+}
+
+function abrirMapaCompleto() {
+    const located = reportesParaMapa().filter((report) => report.latitud && report.longitud);
+    if (!located.length) return mostrarToast("No hay reportes con coordenadas.");
+    window.open(features.buildMapURL(located), "_blank", "noopener");
+}
+
+function renderReportes() {
+    const container = document.getElementById("listaReportes");
+    const visibles = filtroActual === "all"
+        ? reportes
+        : filtroActual === "sin_asignar"
+            ? reportes.filter((report) => report.estado === "pendiente" && !report.operario_id)
+            : reportes.filter((report) => report.estado === filtroActual);
+
+    document.getElementById("reportesTitulo").textContent = filtroActual === "sin_asignar"
+        ? "Reportes por asignar"
+        : filtroActual === "completado" ? "Historial de reportes" : "Reportes recibidos";
+    document.getElementById("reportesSubtitle").textContent = filtroActual === "sin_asignar"
+        ? "Selecciona un operario y envíale el reporte para iniciar la atención."
+        : filtroActual === "completado" ? "Consulta los trabajos finalizados por el equipo."
+        : "Los reportes aparecen ordenados del más reciente al más antiguo.";
+    document.getElementById("filtroActivo").textContent = filtroActual === "sin_asignar" ? "Sin asignar" : filtroActual === "completado" ? "Completados" : "Todos";
+
+    if (!visibles.length) {
+        const message = filtroActual === "sin_asignar"
+            ? "No hay reportes pendientes de asignación."
+            : filtroActual === "completado" ? "Todavía no hay reportes completados." : "No se han recibido reportes.";
+        container.innerHTML = `<div class="empty-state"><span class="empty-state-icon">📭</span><strong>${message}</strong><p>Los cambios aparecerán automáticamente cuando el servidor envíe novedades.</p>${filtroActual !== "all" ? `<button class="secondary compact-button" type="button" onclick="restablecerFiltro()">Ver todos</button>` : ""}</div>`;
+        return;
+    }
+
+    container.innerHTML = visibles.map((report) => {
+        const item = reporteSeguro(report);
+        const image = report.imagen_url
+            ? `<img class="report-thumb" src="${features.escapeHTML(API + report.imagen_url)}" alt="Foto del reporte">`
+            : `<div class="report-icon" aria-hidden="true">🗑️</div>`;
+
+        const assignment = report.estado === "pendiente" && !report.operario_id ? `
+            <div class="assign-box">
+                <div class="assign-select-wrap">
+                    <label for="operario_${Number(report.id)}">Operario responsable</label>
+                    <select id="operario_${Number(report.id)}">
+                        <option value="">Selecciona un operario</option>
+                        ${operarios.map((operator) => `<option value="${Number(operator.id)}">${features.escapeHTML(operator.nombre)}${operator.zona_asignada ? ` · ${features.escapeHTML(operator.zona_asignada)}` : operator.codigo_operario ? ` · ${features.escapeHTML(operator.codigo_operario)}` : ""}</option>`).join("")}
+                    </select>
+                </div>
+                <button class="primary compact-button" id="assign_${Number(report.id)}" type="button" onclick="enviarOperario(${Number(report.id)})">📤 Asignar</button>
+            </div>
+            ${!operarios.length ? `<p class="inline-warning">No hay operarios registrados. Registra uno desde la cuenta de operario.</p>` : ""}
+        ` : "";
+
+        return `
+            <article class="report-item company-report-item">
+                <div class="report-top">
+                    <div class="report-left">
+                        ${image}
+                        <div class="report-info">
+                            <strong>${item.tipo}</strong>
+                            <span class="report-location">📍 ${item.localidad} · ${item.ubicacion} · ${fechaBonita(report.fecha)}</span>
+                            <span class="report-description">${item.descripcion}</span>
+                            <div class="report-meta">👤 Ciudadano: ${item.ciudadano} · 👷 ${item.operario}</div>
+                            <div class="actions">
+                                <button class="action-button view-button" type="button" onclick="verReporte(${Number(report.id)})">Ver detalle</button>
+                                ${report.latitud && report.longitud ? `<button class="action-button secondary-action" type="button" onclick="abrirUbicacion(${Number(report.id)})">Ver ubicación</button>` : ""}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="status ${claseEstado(report.estado)}">${textoEstado(report.estado)}</span>
+                </div>
+                ${assignment}
+            </article>`;
+    }).join("");
+}
+
+function actualizarEstadisticas() {
+    document.getElementById("statTotal").textContent = reportes.length;
+    document.getElementById("statPendientes").textContent = reportes.filter((report) => report.estado === "pendiente" && !report.operario_id).length;
+    document.getElementById("statProceso").textContent = reportes.filter((report) => report.estado === "en proceso").length;
+    document.getElementById("statCompletados").textContent = reportes.filter((report) => report.estado === "completado").length;
+}
+
+function renderAnalytics() {
+    const sectors = features.reportsBySector(reportes, 15);
+    const recentTotal = sectors.reduce((total, sector) => total + sector.total, 0);
+    const container = document.getElementById("analisisSectores");
+
+    document.getElementById("analyticsTotal").textContent = recentTotal;
+    document.getElementById("analyticsSectors").textContent = sectors.length;
+    document.getElementById("analyticsTopSector").textContent = sectors[0]
+        ? `${sectors[0].sector} · ${sectors[0].total}`
+        : "—";
+
+    if (!sectors.length) {
+        container.innerHTML = `<div class="empty-state compact-empty"><span class="empty-state-icon">📊</span><strong>Sin datos en los últimos 15 días</strong><p>El análisis se actualizará cuando lleguen nuevos reportes.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = sectors.slice(0, 8).map((sector) => `
+        <div class="sector-row">
+            <div class="sector-heading"><strong>${features.escapeHTML(sector.sector)}</strong><span>${sector.total} reporte${sector.total === 1 ? "" : "s"}</span></div>
+            <div class="sector-track"><span style="width:${sector.percentage}%"></span></div>
+            <div class="sector-detail"><span>${sector.pendientes} pendiente${sector.pendientes === 1 ? "" : "s"}</span><span>${sector.completados} completado${sector.completados === 1 ? "" : "s"}</span></div>
+        </div>`).join("");
+}
+
+async function asignarAutomaticamente() {
+    const unassigned = reportes.filter((report) => report.estado === "pendiente" && !report.operario_id);
+    const button = document.getElementById("autoAssignButton");
+
+    if (!unassigned.length) {
+        mostrarToast("No hay reportes pendientes de asignar.");
+        return;
+    }
+
+    if (!operarios.length) {
+        mostrarToast("Primero registra al menos un operario con localidad asignada.");
+        return;
+    }
+
+    let assigned = 0;
+    const failures = [];
+    button.disabled = true;
+    button.textContent = "Asignando...";
+
+    try {
+        for (const report of unassigned) {
+            const response = await features.apiFetch(`${API}/api/reportes/${report.id}/asignar-automaticamente`, {
+                method: "POST"
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                failures.push(data.mensaje || `Reporte ${report.id}`);
+            } else {
+                assigned += 1;
+            }
+        }
+
+        await cargarDatos(true);
+        if (assigned) mostrarToast(`${assigned} reporte(s) asignado(s) por localidad y carga.`);
+        if (failures.length) mostrarToast(`${failures.length} reporte(s) sin operario disponible: ${failures[0]}`);
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo completar la asignación automática.");
+    } finally {
+        button.disabled = false;
+        button.textContent = "⚡ Asignar automáticamente";
+    }
+}
+
+async function enviarOperario(id) {
+    const select = document.getElementById(`operario_${id}`);
+    const button = document.getElementById(`assign_${id}`);
+    const operatorId = select?.value;
+
+    if (!operatorId) {
+        mostrarToast("Selecciona un operario responsable.");
+        select?.focus();
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Asignando...";
+
+    try {
+        const response = await features.apiFetch(`${API}/api/reportes/${id}/asignar`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ operario_id: Number(operatorId) })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || "No se pudo asignar el reporte.");
+
+        await cargarDatos(true);
+        mostrarToast("Reporte enviado al operario.");
+    } catch (error) {
+        mostrarToast(error.message || "No se pudo asignar el reporte.");
+        if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "📤 Asignar";
+        }
+    }
+}
+
+function verReporte(id) {
+    const report = reportes.find((item) => item.id === id);
+    if (!report) return;
+    const item = reporteSeguro(report);
+
+    document.getElementById("modalTitulo").textContent = "Detalle del reporte";
+    document.getElementById("modalCard").classList.add("modal-card-wide");
+    document.getElementById("modalContenido").innerHTML = `
+        <div class="detail-hero"><div class="report-icon">🗑️</div><div><span class="status ${claseEstado(report.estado)}">${textoEstado(report.estado)}</span><h3>${item.tipo}</h3><p>${fechaBonita(report.fecha)}</p></div></div>
+        ${report.imagen_url ? `<img class="detail-image" src="${features.escapeHTML(API + report.imagen_url)}" alt="Foto del reporte">` : ""}
+        <div class="detail-grid">
+            <div class="detail-row"><span class="detail-label">Localidad</span><div class="detail-value">📍 ${item.localidad}</div></div>
+            <div class="detail-row"><span class="detail-label">Ubicación</span><div class="detail-value">🧭 ${item.ubicacion}</div></div>
+            <div class="detail-row"><span class="detail-label">Descripción</span><div class="detail-value">${item.descripcion}</div></div>
+            <div class="detail-row"><span class="detail-label">Ciudadano</span><div class="detail-value">${item.ciudadano}</div></div>
+            <div class="detail-row"><span class="detail-label">Operario</span><div class="detail-value">${item.operario}</div></div>
+        </div>
+        <div class="modal-actions">${report.latitud && report.longitud ? `<button class="primary" type="button" onclick="abrirUbicacion(${Number(report.id)})">🗺️ Google Maps</button><button class="secondary" type="button" onclick="abrirWaze(${Number(report.id)})">🚘 Waze</button>` : ""}<button class="secondary" type="button" onclick="cerrarModal()">Cerrar</button></div>`;
+    document.getElementById("modal").classList.add("show");
+}
+
+function abrirUbicacion(id) {
+    const report = reportes.find((item) => item.id === id);
+    if (!report?.latitud || !report?.longitud) return mostrarToast("Este reporte no tiene coordenadas.");
+    window.open(features.buildMapURL([report]), "_blank", "noopener");
+}
+
+function abrirWaze(id) {
+    const report = reportes.find((item) => item.id === id);
+    if (!report?.latitud || !report?.longitud) return mostrarToast("Este reporte no tiene coordenadas.");
+    window.open(features.buildWazeURL(report), "_blank", "noopener");
+}
+
+function reportesVisibles() {
+    return filtroActual === "all"
+        ? reportes
+        : filtroActual === "sin_asignar"
+            ? reportes.filter((report) => report.estado === "pendiente" && !report.operario_id)
+            : reportes.filter((report) => report.estado === filtroActual);
+}
+
+function datosExportacion() {
+    return reportesVisibles().map((report) => [
+        report.id,
+        report.tipo,
+        features.sectorFor(report),
+        report.ubicacion,
+        report.descripcion,
+        textoEstado(report.estado),
+        report.operario || "Sin asignar",
+        fechaBonita(report.fecha)
+    ]);
+}
+
+function exportarExcel() {
+    const rows = datosExportacion();
+    if (!rows.length) return mostrarToast("No hay reportes para exportar con el filtro actual.");
+    features.downloadCSV(
+        `runtrash-reportes-${new Date().toISOString().slice(0, 10)}.csv`,
+        ["ID", "Tipo", "Sector", "Ubicación", "Descripción", "Estado", "Operario", "Fecha"],
+        rows
+    );
+    mostrarToast("Archivo CSV compatible con Excel descargado.");
+}
+
+function exportarPDF() {
+    const rows = datosExportacion();
+    if (!rows.length) return mostrarToast("No hay reportes para exportar con el filtro actual.");
+    try {
+        features.printPDF({
+            title: "Reporte de gestión RunTrash",
+            subtitle: `Filtro: ${document.getElementById("filtroActivo").textContent} · Generado el ${fechaBonita(new Date())}`,
+            headers: ["ID", "Tipo", "Sector", "Ubicación", "Descripción", "Estado", "Operario", "Fecha"],
+            rows,
+            summary: [
+                { label: "Total", value: rows.length },
+                { label: "Pendientes", value: rows.filter((row) => row[5] === "Pendiente").length },
+                { label: "En proceso", value: rows.filter((row) => row[5] === "En proceso").length },
+                { label: "Completados", value: rows.filter((row) => row[5] === "Completado").length }
+            ]
+        });
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+function actualizarNotificaciones() {
+    const badge = document.getElementById("notificationCount");
+    const total = notificaciones.noLeidas;
+    badge.textContent = total > 99 ? "99+" : String(total);
+    badge.hidden = total === 0;
+}
+
+async function cargarNotificaciones() {
+    try {
+        notificaciones = await features.cargarNotificaciones(API);
+        actualizarNotificaciones();
+    } catch (error) {
+        console.warn("No se pudieron cargar las notificaciones:", error);
+    }
+}
+
+function abrirDetalleNotificacion(tipo, id) {
+    if (tipo === "reporte") {
+        verReporte(id);
+        return;
+    }
+    irAInicio();
+}
+
+function mostrarNotificaciones() {
+    document.getElementById("modalTitulo").textContent = "Notificaciones operativas";
+
+    const lista = notificaciones.notificaciones;
+    const estadoAlertas = features.textoBotonAlertas();
+
+    const barra = `
+        <div class="notification-toolbar">
+            <p>${notificaciones.noLeidas > 0
+                ? `Tienes ${notificaciones.noLeidas} ${notificaciones.noLeidas === 1 ? "aviso" : "avisos"} sin leer.`
+                : "Estás al día con tus avisos."}</p>
+            ${notificaciones.noLeidas > 0
+                ? `<button class="secondary" type="button" onclick="marcarNotificacionesLeidas()">Marcar como leídas</button>`
+                : ""}
+        </div>
+        <div class="alerta-estado ${estadoAlertas.activo ? "is-activa" : ""}">
+            <span aria-hidden="true">${estadoAlertas.activo ? "🔔" : "🔕"}</span>
+            <span>${estadoAlertas.activo
+                ? "Las alertas del navegador están activadas."
+                : estadoAlertas.bloqueado
+                    ? "Tu navegador bloqueó las alertas. Habilítalas en los permisos del sitio."
+                    : "Activa las alertas para recibir avisos aunque la pestaña esté en segundo plano."}</span>
+            ${estadoAlertas.activo ? "" : `<button type="button" onclick="activarNotificaciones()" ${estadoAlertas.bloqueado ? "disabled" : ""}>Activar</button>`}
+        </div>`;
+
+    features.renderNotificaciones(
+        document.getElementById("modalContenido"),
+        lista,
+        { alHacerClic: abrirDetalleNotificacion }
+    );
+
+    document.getElementById("modalContenido").insertAdjacentHTML("afterbegin", barra);
+
+    document.getElementById("modal").classList.add("show");
+}
+
+async function marcarNotificacionesLeidas() {
+    try {
+        await features.marcarNotificacionesLeidas(API);
+        await cargarNotificaciones();
+        mostrarNotificaciones();
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+async function activarNotificaciones() {
+    try {
+        await features.requestNotificationPermission();
+        mostrarToast("Alertas del navegador activadas.");
+        await cargarNotificaciones();
+        mostrarNotificaciones();
+        features.notify("RunTrash", "Recibirás alertas cuando lleguen reportes nuevos.");
+    } catch (error) {
+        mostrarToast(error.message);
+        mostrarNotificaciones();
+    }
+}
+
+function mostrarPerfil() {
+    document.getElementById("modalTitulo").textContent = "Perfil de empresa";
+    document.getElementById("modalContenido").innerHTML = `
+        <div class="profile-card"><div class="profile-avatar">${features.escapeHTML((usuarioActual?.nombre || "E").charAt(0).toUpperCase())}</div><div><h3>${features.escapeHTML(usuarioActual?.nombre || "Empresa")}</h3><p>${features.escapeHTML(usuarioActual?.correo || "Correo no disponible")}</p></div></div>
+        <div class="detail-row"><span class="detail-label">NIT</span><div class="detail-value">${features.escapeHTML(usuarioActual?.nit_empresa || "No registrado")}</div></div>
+        <div class="detail-row"><span class="detail-label">Rol</span><div class="detail-value">Empresa de recolección</div></div>
+        <button class="secondary" type="button" onclick="cerrarModal()">Cerrar</button>`;
+    document.getElementById("modal").classList.add("show");
+}
+
+function irAInicio(menuElement) {
+    if (menuElement) seleccionarMenu(menuElement);
+    filtroActual = "all";
+    renderReportes();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function irAReportes(menuElement, filter) {
+    if (menuElement) seleccionarMenu(menuElement);
+    filtroActual = filter;
+    renderReportes();
+    document.getElementById("reportes").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function irAAnalitica(menuElement) {
+    if (menuElement) seleccionarMenu(menuElement);
+    renderAnalytics();
+    document.getElementById("analitica").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function restablecerFiltro() {
+    filtroActual = "all";
+    renderReportes();
+}
+
+function seleccionarMenu(element) {
+    if (!element) return;
+    document.querySelectorAll(".menu a").forEach((link) => {
+        link.classList.remove("active");
+        link.removeAttribute("aria-current");
+    });
+    element.classList.add("active");
+    element.setAttribute("aria-current", "page");
+}
+
+function cerrarModal(event) {
+    if (!event || event.target === document.getElementById("modal")) document.getElementById("modal").classList.remove("show");
+}
+
+function mostrarToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
+async function cerrarSesion() {
+    const token = localStorage.getItem("runtrash_token");
+    try {
+        if (token) {
+            await features.apiFetch(`${API}/api/logout`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+        }
+    } finally {
+        localStorage.removeItem("runtrash_user");
+        localStorage.removeItem("runtrash_token");
+        window.location.href = "index.html";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    features = window.RunTrashFeatures;
+    if (usuarioActual?.nombre) {
+        document.querySelector(".user-info strong").textContent = usuarioActual.nombre;
+        document.querySelector(".user-info span").textContent = usuarioActual.nit_empresa ? `NIT ${usuarioActual.nit_empresa}` : "Empresa RunTrash";
+    }
+    cargarDatos();
+    cargarNotificaciones();
+    features.connectEvents(API, async (event) => {
+        if (event.tipo === "notificaciones_leidas") return;
+
+        await Promise.all([cargarDatos(true, false), cargarNotificaciones()]);
+
+        const pendiente = reportes.filter((report) => report.estado === "pendiente" && !report.operario_id).length;
+
+        if (event.tipo === "reporte_creado") {
+            features.notify(
+                "Nuevo reporte recibido",
+                `Quedan ${pendiente} reportes por asignar.`
+            );
+        }
+
+        if (event.tipo === "estado_actualizado") {
+            features.notify("Actualización de estado", "Un reporte cambió de estado.");
+        }
+    }, (status) => {
+        const service = document.querySelector(".service-status");
+        if (service) service.textContent = status === "conectado" ? "Tiempo real" : "Reconectando";
+    });
+    window.setInterval(() => {
+        cargarDatos(true);
+        cargarNotificaciones();
+    }, 30000);
+    window.addEventListener("online", () => {
+        mostrarToast("Conexión recuperada. Actualizando los reportes...");
+        cargarDatos(true);
+    });
+});
+</script>
+</body>
+</html>

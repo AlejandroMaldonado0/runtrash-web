@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#073c23">
+<meta name="description" content="Panel ciudadano de RunTrash para reportar residuos y consultar su seguimiento.">
+<link rel="icon" href="logos/logo.png" type="image/png">
+<title>RunTrash - Ciudadano</title>
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script src="ui.js" defer></script>
+<script src="features.js" defer></script>
+</head>
+<body class="dashboard-page role-citizen">
+<a class="skip-link" href="#contenidoPrincipal">Saltar al contenido</a>
+
+<div class="app">
+    <button class="sidebar-backdrop" type="button" data-sidebar-backdrop aria-label="Cerrar menú"></button>
+
+    <aside class="sidebar" id="sidebar" data-sidebar>
+        <button class="sidebar-close" type="button" data-sidebar-close aria-label="Cerrar menú">×</button>
+        <div class="sidebar-logo"><img src="logos/logo.png" alt="RunTrash"></div>
+
+        <div class="user-box">
+            <div class="user-icon" aria-hidden="true">👤</div>
+            <div class="user-info"><strong>Ciudadano</strong><span>Usuario RunTrash</span></div>
+        </div>
+
+        <nav class="menu" aria-label="Navegación principal">
+            <a href="#" class="active" aria-current="page" onclick="irAInicio(this);return false"><span class="menu-icon">🏠</span>Inicio</a>
+            <a href="#reportes" onclick="irAReportes(this,'all');return false"><span class="menu-icon">📋</span>Mis reportes</a>
+            <a href="#" onclick="abrirNuevoReporte();return false"><span class="menu-icon">♻️</span>Reportar basura</a>
+            <a href="#" onclick="mostrarMapa(this);return false"><span class="menu-icon">🗺️</span>Mapa de reportes</a>
+            <a href="#reportes" onclick="irAReportes(this,'completado');return false"><span class="menu-icon">🕘</span>Historial</a>
+            <a href="#" onclick="mostrarPerfil();return false"><span class="menu-icon">👤</span>Mi perfil</a>
+        </nav>
+
+        <div class="logout"><a href="index.html" onclick="cerrarSesion();return false"><span class="menu-icon">🚪</span>Cerrar sesión</a></div>
+    </aside>
+
+    <main class="main" id="contenidoPrincipal" tabindex="-1">
+        <div class="topbar">
+            <button class="menu-toggle" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menú">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div class="welcome">
+                <div class="welcome-copy">
+                    <h1>¡Hola! Bienvenido a RunTrash</h1>
+                    <p>Ayuda a mantener limpia nuestra ciudad.</p>
+                    <span class="today" data-current-date></span>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <span class="service-status">Servicio activo</span>
+                <button class="notification" type="button" onclick="mostrarNotificaciones()" aria-label="Ver notificaciones">
+                    🔔
+                    <span class="notification-count" id="notificationCount" hidden>0</span>
+                </button>
+            </div>
+        </div>
+
+        <section class="report-card">
+            <div class="report-content">
+                <h2>¿Encontraste basura?</h2>
+                <p>Reporta un punto de acumulación de residuos y ayuda a que pueda ser atendido por nuestro equipo.</p>
+            </div>
+            <button class="report-button" type="button" onclick="abrirNuevoReporte()">♻️ Reportar basura</button>
+        </section>
+
+        <section class="stats" aria-label="Resumen de mis reportes">
+            <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-info"><span>Mis reportes</span><strong id="statTotal">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-info"><span>Pendientes</span><strong id="statPendientes">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-info"><span>En proceso</span><strong id="statProceso">0</strong></div></div>
+        </section>
+
+        <section class="section" id="reportes">
+            <div class="section-header">
+                <h2 id="reportesTitulo">Mis reportes recientes</h2>
+                <span class="filter-badge" id="filtroActivo">Todos</span>
+            </div>
+            <p class="section-subtitle" id="reportesSubtitle">Consulta el estado de los reportes que has realizado.</p>
+            <div id="listaReportes" aria-live="polite"></div>
+        </section>
+    </main>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo" aria-hidden="true" onclick="cerrarModal(event)">
+    <div class="modal-card" id="modalCard">
+        <div class="modal-header">
+            <h3 id="modalTitulo">Reportar basura</h3>
+            <button class="close" type="button" aria-label="Cerrar ventana" onclick="cerrarModal()">×</button>
+        </div>
+        <div id="modalContenido"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*
+Base de la API, en este orden de prioridad:
+  1. ?api=https://servidor...  (parametro manual, para pruebas)
+  2. window.RUNTRASH_API      (config.js, util al desplegar)
+  3. mismo origen             (todo junto en un solo dominio)
+  4. localhost:3000           (solo al abrir el archivo con doble clic)
+*/
+const API = (new URLSearchParams(location.search).get("api")
+    || window.RUNTRASH_API
+    || (location.protocol === "file:" ? "http://localhost:3000" : "")
+    || location.origin).replace(/\/+$/, "");
+let features;
+let reportes = [];
+let notificaciones = { notificaciones: [], noLeidas: 0 };
+let configuracion = { limite_reportes_diarios: 5 };
+let filtroActual = "all";
+let usuarioActual = obtenerUsuario();
+let toastTimer = null;
+let previewUrl = null;
+
+function obtenerUsuario() {
+    try {
+        const guardado = localStorage.getItem("runtrash_user");
+        if (guardado) return JSON.parse(guardado);
+    } catch (error) {
+        console.warn("No se pudo leer la sesión:", error);
+    }
+
+    const id = new URLSearchParams(location.search).get("usuario_id");
+    return id ? { id: Number(id), nombre: "Ciudadano" } : null;
+}
+
+function exigirUsuario(mostrarMensaje = true) {
+    if (!usuarioActual?.id) {
+        if (mostrarMensaje) mostrarToast("Inicia sesión para crear y consultar reportes.");
+        return false;
+    }
+    return true;
+}
+
+function textoEstado(estado) {
+    return estado === "pendiente" ? "Pendiente" : estado === "en proceso" ? "En proceso" : "Completado";
+}
+
+function claseEstado(estado) {
+    return estado === "pendiente" ? "pending" : estado === "en proceso" ? "progress" : "done";
+}
+
+function iconoTipo(tipo) {
+    const valor = String(tipo || "").toLowerCase();
+    if (valor.includes("zona verde")) return "🌳";
+    if (valor.includes("vía")) return "♻️";
+    return "🗑️";
+}
+
+function fechaBonita(fecha) {
+    return fecha ? new Date(fecha).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "";
+}
+
+function reporteSeguro(reporte) {
+    return {
+        ...reporte,
+        tipo: features.escapeHTML(reporte.tipo),
+        ubicacion: features.escapeHTML(reporte.ubicacion),
+        localidad: features.escapeHTML(reporte.localidad || "Sin localidad"),
+        descripcion: features.escapeHTML(reporte.descripcion),
+        ciudadano: features.escapeHTML(reporte.ciudadano || "Sin información")
+    };
+}
+
+async function cargarReportes(silencioso = false, notificar = true) {
+    if (!exigirUsuario(!silencioso)) return;
+
+    try {
+        const response = await features.apiFetch(`${API}/api/reportes/usuario/${usuarioActual.id}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || "No se pudieron cargar los reportes.");
+
+        const anteriores = new Map(reportes.map((report) => [report.id, report.estado]));
+        const esCargaInicial = reportes.length === 0 && !silencioso;
+        reportes = data.reportes || [];
+
+        if (notificar && !esCargaInicial && reportes.length) {
+            const novedades = reportes.filter((report) => {
+                const estadoAnterior = anteriores.get(report.id);
+                return estadoAnterior && estadoAnterior !== report.estado;
+            });
+
+            if (novedades.length) {
+                features.notify(
+                    "Actualización de RunTrash",
+                    novedades.length === 1
+                        ? `Tu reporte ${novedades[0].tipo} ahora está ${textoEstado(novedades[0].estado).toLowerCase()}.`
+                        : `${novedades.length} reportes cambiaron de estado.`
+                );
+            }
+        }
+
+        renderReportes();
+    } catch (error) {
+        console.error(error);
+        if (!silencioso) mostrarToast(error.message || "No se pudieron cargar los reportes.");
+    }
+}
+
+function renderReportes() {
+    const container = document.getElementById("listaReportes");
+    const visibles = filtroActual === "all" ? reportes : reportes.filter((report) => report.estado === filtroActual);
+
+    document.getElementById("reportesTitulo").textContent = filtroActual === "completado" ? "Historial de reportes" : "Mis reportes recientes";
+    document.getElementById("reportesSubtitle").textContent = filtroActual === "completado"
+        ? "Consulta los reportes que ya fueron completados."
+        : "Consulta el estado de los reportes que has realizado.";
+    document.getElementById("filtroActivo").textContent = filtroActual === "completado" ? "Completados" : "Todos";
+    document.getElementById("filtroActivo").classList.toggle("is-history", filtroActual === "completado");
+
+    if (!visibles.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-state-icon">${filtroActual === "completado" ? "🕘" : "📭"}</span>
+                <strong>${filtroActual === "completado" ? "Todavía no hay reportes completados" : "No tienes reportes aún"}</strong>
+                <p>${filtroActual === "completado" ? "Los reportes resueltos aparecerán aquí." : "Crea tu primer reporte y síguelo desde este panel."}</p>
+                ${filtroActual === "completado"
+                    ? `<button class="secondary compact-button" type="button" onclick="restablecerFiltro()">Ver todos los reportes</button>`
+                    : `<button class="secondary compact-button" type="button" onclick="abrirNuevoReporte()">Crear mi primer reporte</button>`}
+            </div>`;
+    } else {
+        container.innerHTML = visibles.map((reporte) => {
+            const item = reporteSeguro(reporte);
+            const image = reporte.imagen_url
+                ? `<img class="report-thumb" src="${features.escapeHTML(API + reporte.imagen_url)}" alt="Foto del reporte">`
+                : `<div class="report-icon" aria-hidden="true">${iconoTipo(reporte.tipo)}</div>`;
+
+            return `
+                <article class="report-item">
+                    <div class="report-left">
+                        ${image}
+                        <div class="report-info">
+                            <strong>${item.tipo}</strong>
+                            <span class="report-location">📍 ${item.localidad} · ${item.ubicacion} · ${fechaBonita(reporte.fecha)}</span>
+                            <span class="report-description">${item.descripcion}</span>
+                            <div class="actions">
+                                <button class="action-button view-button" type="button" onclick="verReporte(${Number(reporte.id)})">Ver detalle</button>
+                                ${reporte.latitud && reporte.longitud ? `<button class="action-button secondary-action" type="button" onclick="abrirUbicacion(${Number(reporte.id)})">Ver ubicación</button>` : ""}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="status ${claseEstado(reporte.estado)}">${textoEstado(reporte.estado)}</span>
+                </article>`;
+        }).join("");
+    }
+
+    actualizarEstadisticas();
+    actualizarNotificaciones();
+}
+
+function actualizarEstadisticas() {
+    document.getElementById("statTotal").textContent = reportes.length;
+    document.getElementById("statPendientes").textContent = reportes.filter((report) => report.estado === "pendiente").length;
+    document.getElementById("statProceso").textContent = reportes.filter((report) => report.estado === "en proceso").length;
+}
+
+function actualizarContadorDescripcion() {
+    const input = document.getElementById("nuevaDescripcion");
+    const counter = document.getElementById("descripcionContador");
+    if (input && counter) counter.textContent = `${input.value.length}/100`;
+}
+
+function abrirNuevoReporte() {
+    if (!exigirUsuario()) return;
+
+    if (reporteDelDia() >= Number(configuracion.limite_reportes_diarios || 5)) {
+        mostrarToast(`Alcanzaste el límite de ${configuracion.limite_reportes_diarios || 5} reportes diarios.`);
+        return;
+    }
+
+    document.getElementById("modalTitulo").textContent = "Nuevo reporte";
+    document.getElementById("modalCard").classList.add("modal-card-wide");
+    document.getElementById("modalContenido").innerHTML = `
+        <div class="form-intro">
+            <span aria-hidden="true">📍</span>
+            <p><strong>Ubicación automática</strong><br>El GPS se activará al abrir el formulario. También puedes escribir la dirección manualmente.</p>
+        </div>
+        <div class="input-group">
+            <label for="nuevoTipo">Tipo de residuo</label>
+            <select id="nuevoTipo">
+                <option>Acumulación de residuos</option>
+                <option>Basura en vía pública</option>
+                <option>Residuos en zona verde</option>
+                <option>Otro</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="nuevaLocalidad">Localidad</label>
+            <select id="nuevaLocalidad" required>
+                <option value="">Selecciona una localidad</option>
+                ${features.localidades.map((localidad) => `<option value="${localidad}">${localidad}</option>`).join("")}
+            </select>
+            <div class="file-help">Usaremos la localidad para asignar automáticamente un operario.</div>
+        </div>
+        <div class="input-group">
+            <label for="nuevaUbicacion">Ubicación</label>
+            <div class="gps-row">
+                <input id="nuevaUbicacion" placeholder="Ej: Calle 25 #15-20" autocomplete="street-address">
+                <button class="small-button" id="gpsButton" type="button" onclick="usarUbicacion()">📍 GPS</button>
+            </div>
+            <input type="hidden" id="nuevaLatitud">
+            <input type="hidden" id="nuevaLongitud">
+            <div class="field-status" id="gpsStatus">Esperando ubicación GPS...</div>
+        </div>
+        <div class="input-group">
+            <div class="label-row"><label for="nuevaDescripcion">Descripción</label><span id="descripcionContador">0/100</span></div>
+            <textarea id="nuevaDescripcion" maxlength="100" placeholder="Describe brevemente lo que encontraste" oninput="actualizarContadorDescripcion()"></textarea>
+        </div>
+        <div class="input-group">
+            <label for="nuevaImagen">Foto del reporte <span class="required-mark">*</span></label>
+            <input id="nuevaImagen" type="file" accept="image/jpeg,image/png,image/webp" required onchange="previsualizarImagen(this)">
+            <div class="file-help">JPG, PNG o WEBP. Máximo 8 MB.</div>
+            <img id="imagenPreview" class="image-preview" alt="Vista previa de la foto">
+        </div>
+        <button class="primary" id="enviarReporteButton" type="button" onclick="guardarReporte()">📤 Enviar reporte</button>`;
+
+    document.getElementById("modal").classList.add("show");
+    usarUbicacion();
+}
+
+function reporteDelDia() {
+    const today = new Date();
+    return reportes.filter((report) => {
+        const date = new Date(report.fecha);
+        return date.getFullYear() === today.getFullYear()
+            && date.getMonth() === today.getMonth()
+            && date.getDate() === today.getDate();
+    }).length;
+}
+
+function previsualizarImagen(input) {
+    const image = document.getElementById("imagenPreview");
+    const file = input.files[0];
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+
+    if (!file) {
+        image.style.display = "none";
+        return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+        input.value = "";
+        image.style.display = "none";
+        mostrarToast("La foto supera el límite de 8 MB.");
+        return;
+    }
+
+    previewUrl = URL.createObjectURL(file);
+    image.src = previewUrl;
+    image.style.display = "block";
+}
+
+function usarUbicacion() {
+    const button = document.getElementById("gpsButton");
+    const status = document.getElementById("gpsStatus");
+
+    if (!navigator.geolocation) {
+        status.textContent = "GPS no disponible. Ingresa la dirección manualmente.";
+        status.className = "field-status is-warning";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "⏳ Ubicando";
+    status.textContent = "Obteniendo tu ubicación...";
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            document.getElementById("nuevaLatitud").value = latitude;
+            document.getElementById("nuevaLongitud").value = longitude;
+            document.getElementById("nuevaUbicacion").value = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            status.textContent = `GPS activo · precisión aproximada: ${Math.round(position.coords.accuracy)} m`;
+            status.className = position.coords.accuracy <= 20 ? "field-status is-success" : "field-status is-warning";
+            button.disabled = false;
+            button.textContent = "✓ GPS";
+        },
+        (error) => {
+            const messages = {
+                1: "Permiso denegado. Ingresa la dirección manualmente.",
+                2: "No se pudo determinar la ubicación.",
+                3: "La solicitud de GPS tardó demasiado."
+            };
+            status.textContent = messages[error.code] || "GPS no disponible. Ingresa la dirección manualmente.";
+            status.className = "field-status is-warning";
+            button.disabled = false;
+            button.textContent = "📍 GPS";
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
+}
+
+async function guardarReporte() {
+    if (!exigirUsuario()) return;
+
+    const type = document.getElementById("nuevoTipo").value;
+    const locality = document.getElementById("nuevaLocalidad").value;
+    const locationInput = document.getElementById("nuevaUbicacion");
+    const location = locationInput.value.trim();
+    const description = document.getElementById("nuevaDescripcion").value.trim();
+    const imageInput = document.getElementById("nuevaImagen");
+    const image = imageInput.files[0];
+    const latitude = document.getElementById("nuevaLatitud").value;
+    const longitude = document.getElementById("nuevaLongitud").value;
+    const button = document.getElementById("enviarReporteButton");
+
+    if (!locality) {
+        mostrarToast("Selecciona la localidad del reporte.");
+        return;
+    }
+
+    if (!location) {
+        mostrarToast("Ingresa o activa la ubicación del reporte.");
+        return;
+    }
+
+    if (!description) {
+        mostrarToast("Escribe una breve descripción.");
+        return;
+    }
+
+    if (description.length > 100) {
+        mostrarToast("La descripción puede tener máximo 100 caracteres.");
+        return;
+    }
+
+    if (!image) {
+        mostrarToast("Adjunta una foto para enviar el reporte.");
+        return;
+    }
+
+    if (reporteDelDia() >= Number(configuracion.limite_reportes_diarios || 5)) {
+        mostrarToast(`Alcanzaste el límite de ${configuracion.limite_reportes_diarios || 5} reportes diarios.`);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("usuario_id", usuarioActual.id);
+    formData.append("tipo", type);
+    formData.append("ubicacion", location);
+    formData.append("localidad", locality);
+    formData.append("descripcion", description);
+    if (latitude) formData.append("latitud", latitude);
+    if (longitude) formData.append("longitud", longitude);
+    formData.append("imagen", image);
+
+    button.disabled = true;
+    button.classList.add("is-loading");
+    button.textContent = "Enviando reporte...";
+
+    try {
+        const response = await features.apiFetch(`${API}/api/reportes`, { method: "POST", body: formData });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.mensaje || "No se pudo enviar el reporte.");
+
+        cerrarModal();
+        limpiarFormularioReporte();
+        await cargarReportes(true);
+        mostrarToast(data.mensaje || "Reporte enviado correctamente.");
+    } catch (error) {
+        console.error(error);
+        mostrarToast(navigator.onLine
+            ? error.message || "No se pudo enviar el reporte."
+            : "No hay conexión. El reporte sigue abierto para enviarlo luego.");
+    } finally {
+        if (button.isConnected) {
+            button.disabled = false;
+            button.classList.remove("is-loading");
+            button.textContent = "📤 Enviar reporte";
+        }
+    }
+}
+
+function limpiarFormularioReporte() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+}
+
+function verReporte(id) {
+    const report = reportes.find((item) => item.id === id);
+    if (!report) return;
+
+    const item = reporteSeguro(report);
+    document.getElementById("modalTitulo").textContent = "Detalle del reporte";
+    document.getElementById("modalCard").classList.add("modal-card-wide");
+    document.getElementById("modalContenido").innerHTML = `
+        <div class="detail-hero">
+            <div class="report-icon" aria-hidden="true">${iconoTipo(report.tipo)}</div>
+            <div><span class="status ${claseEstado(report.estado)}">${textoEstado(report.estado)}</span><h3>${item.tipo}</h3><p>${fechaBonita(report.fecha)}</p></div>
+        </div>
+        ${report.imagen_url ? `<img class="detail-image" src="${features.escapeHTML(API + report.imagen_url)}" alt="Foto del reporte">` : ""}
+        <div class="detail-grid">
+            <div class="detail-row"><span class="detail-label">Localidad</span><div class="detail-value">📍 ${item.localidad}</div></div>
+            <div class="detail-row"><span class="detail-label">Ubicación</span><div class="detail-value">🧭 ${item.ubicacion}</div></div>
+            <div class="detail-row"><span class="detail-label">Descripción</span><div class="detail-value">${item.descripcion}</div></div>
+            <div class="detail-row"><span class="detail-label">Ciudadano</span><div class="detail-value">${item.ciudadano}</div></div>
+        </div>
+        <div class="modal-actions">
+            ${report.latitud && report.longitud ? `<button class="primary" type="button" onclick="abrirUbicacion(${Number(report.id)})">🗺️ Google Maps</button><button class="secondary" type="button" onclick="abrirWaze(${Number(report.id)})">🚘 Waze</button>` : ""}
+            <button class="secondary" type="button" onclick="cerrarModal()">Cerrar</button>
+        </div>`;
+    document.getElementById("modal").classList.add("show");
+}
+
+function abrirUbicacion(id) {
+    const report = reportes.find((item) => item.id === id);
+    if (!report?.latitud || !report?.longitud) {
+        mostrarToast("Este reporte no tiene coordenadas guardadas.");
+        return;
+    }
+    window.open(features.buildMapURL([report]), "_blank", "noopener");
+}
+
+function abrirWaze(id) {
+    const report = reportes.find((item) => item.id === id);
+    if (!report?.latitud || !report?.longitud) return mostrarToast("Este reporte no tiene coordenadas.");
+    window.open(features.buildWazeURL(report), "_blank", "noopener");
+}
+
+function mostrarMapa(menuElement) {
+    if (menuElement) seleccionarMenu(menuElement);
+    const locatedReports = reportes.filter((report) => report.latitud && report.longitud);
+
+    if (!locatedReports.length) {
+        mostrarToast("Aún no tienes reportes con coordenadas para mostrar en el mapa.");
+        return;
+    }
+
+    document.getElementById("modalTitulo").textContent = "Mapa de mis reportes";
+    document.getElementById("modalCard").classList.add("modal-card-map");
+    document.getElementById("modalContenido").innerHTML = `
+        <div class="map-frame"><iframe title="Mapa de reportes" loading="lazy" src="${features.mapEmbedURL(locatedReports)}"></iframe></div>
+        <div class="map-summary"><strong>${locatedReports.length}</strong><span>reportes con ubicación disponible</span></div>
+        <div class="map-report-list">${locatedReports.slice(0, 6).map((report) => `
+            <button type="button" onclick="abrirUbicacion(${Number(report.id)})">
+                <span>${features.escapeHTML(report.tipo)}</span><small>${features.escapeHTML(report.ubicacion)}</small>
+            </button>`).join("")}</div>
+        <button class="primary" type="button" onclick="abrirMapaCompleto()">Abrir mapa completo</button>`;
+    document.getElementById("modal").classList.add("show");
+}
+
+function abrirMapaCompleto() {
+    const locatedReports = reportes.filter((report) => report.latitud && report.longitud);
+    window.open(features.buildMapURL(locatedReports), "_blank", "noopener");
+}
+
+function actualizarNotificaciones() {
+    const badge = document.getElementById("notificationCount");
+    const total = notificaciones.noLeidas;
+    badge.textContent = total > 99 ? "99+" : String(total);
+    badge.hidden = total === 0;
+}
+
+async function cargarNotificaciones() {
+    try {
+        notificaciones = await features.cargarNotificaciones(API);
+        actualizarNotificaciones();
+    } catch (error) {
+        console.warn("No se pudieron cargar las notificaciones:", error);
+    }
+}
+
+function abrirDetalleNotificacion(tipo, id) {
+    if (tipo === "reporte") {
+        verReporte(id);
+        return;
+    }
+    cargarReportes();
+}
+
+function mostrarNotificaciones() {
+    document.getElementById("modalTitulo").textContent = "Notificaciones";
+    document.getElementById("modalCard").classList.add("modal-card-notifications");
+
+    const lista = notificaciones.notificaciones;
+    const estadoAlertas = features.textoBotonAlertas();
+
+    const barra = `
+        <div class="notification-toolbar">
+            <p>${notificaciones.noLeidas > 0
+                ? `Tienes ${notificaciones.noLeidas} ${notificaciones.noLeidas === 1 ? "aviso" : "avisos"} sin leer.`
+                : "Estás al día con tus avisos."}</p>
+            ${notificaciones.noLeidas > 0
+                ? `<button class="secondary" type="button" onclick="marcarNotificacionesLeidas()">Marcar como leídas</button>`
+                : ""}
+        </div>
+        <div class="alerta-estado ${estadoAlertas.activo ? "is-activa" : ""}">
+            <span aria-hidden="true">${estadoAlertas.activo ? "🔔" : "🔕"}</span>
+            <span>${estadoAlertas.activo
+                ? "Las alertas del navegador están activadas."
+                : estadoAlertas.bloqueado
+                    ? "Tu navegador bloqueó las alertas. Habilítalas en los permisos del sitio."
+                    : "Activa las alertas para saber cuando atiendan tu reporte."}</span>
+            ${estadoAlertas.activo ? "" : `<button type="button" onclick="activarNotificaciones()" ${estadoAlertas.bloqueado ? "disabled" : ""}>Activar</button>`}
+        </div>`;
+
+    features.renderNotificaciones(
+        document.getElementById("modalContenido"),
+        lista,
+        { alHacerClic: abrirDetalleNotificacion }
+    );
+
+    document.getElementById("modalContenido").insertAdjacentHTML("afterbegin", barra);
+    document.getElementById("modal").classList.add("show");
+}
+
+async function marcarNotificacionesLeidas() {
+    try {
+        await features.marcarNotificacionesLeidas(API);
+        await cargarNotificaciones();
+        mostrarNotificaciones();
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+async function activarNotificaciones() {
+    try {
+        await features.requestNotificationPermission();
+        mostrarToast("Notificaciones del navegador activadas.");
+        await cargarNotificaciones();
+        mostrarNotificaciones();
+        features.notify("RunTrash", "Las actualizaciones de tus reportes aparecerán aquí.");
+    } catch (error) {
+        mostrarToast(error.message);
+        mostrarNotificaciones();
+    }
+}
+
+function mostrarPerfil() {
+    document.getElementById("modalTitulo").textContent = "Mi perfil";
+    document.getElementById("modalContenido").innerHTML = `
+        <div class="profile-card"><div class="profile-avatar">${features.escapeHTML((usuarioActual?.nombre || "C").charAt(0).toUpperCase())}</div><div><h3>${features.escapeHTML(usuarioActual?.nombre || "Ciudadano")}</h3><p>${features.escapeHTML(usuarioActual?.correo || "Correo no disponible")}</p></div></div>
+        <div class="detail-row"><span class="detail-label">Rol</span><div class="detail-value">Ciudadano</div></div>
+        <div class="detail-row"><span class="detail-label">Member since</span><div class="detail-value">${usuarioActual?.fecha_creacion ? fechaBonita(usuarioActual.fecha_creacion) : "Información no disponible"}</div></div>
+        <button class="secondary" type="button" onclick="cerrarModal()">Cerrar</button>`;
+    document.getElementById("modal").classList.add("show");
+}
+
+function irAInicio(menuElement) {
+    if (menuElement) seleccionarMenu(menuElement);
+    filtroActual = "all";
+    renderReportes();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function irAReportes(menuElement, filter) {
+    if (menuElement) seleccionarMenu(menuElement);
+    filtroActual = filter;
+    renderReportes();
+    document.getElementById("reportes").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function restablecerFiltro() {
+    filtroActual = "all";
+    renderReportes();
+    document.querySelector('.menu a[onclick*="irAReportes"]')?.setAttribute("aria-current", "page");
+}
+
+function seleccionarMenu(element) {
+    document.querySelectorAll(".menu a").forEach((link) => {
+        link.classList.remove("active");
+        link.removeAttribute("aria-current");
+    });
+    element.classList.add("active");
+    element.setAttribute("aria-current", "page");
+}
+
+function cerrarModal(event) {
+    if (!event || event.target === document.getElementById("modal")) {
+        document.getElementById("modal").classList.remove("show");
+        limpiarFormularioReporte();
+    }
+}
+
+function mostrarToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
+async function cerrarSesion() {
+    const token = localStorage.getItem("runtrash_token");
+    try {
+        if (token) {
+            await features.apiFetch(`${API}/api/logout`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+        }
+    } finally {
+        localStorage.removeItem("runtrash_user");
+        localStorage.removeItem("runtrash_token");
+        window.location.href = "index.html";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    features = window.RunTrashFeatures;
+    if (usuarioActual?.nombre) {
+        document.querySelector(".user-info strong").textContent = usuarioActual.nombre;
+        document.querySelector(".user-info span").textContent = usuarioActual.correo || "Usuario RunTrash";
+    }
+    fetch(`${API}/api/configuracion/publica`)
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.ok) configuracion = { ...configuracion, ...data.configuracion };
+        })
+        .catch(() => {});
+    cargarReportes();
+    cargarNotificaciones();
+    features.connectEvents(API, async (event) => {
+        if (event.tipo === "notificaciones_leidas") return;
+
+        await Promise.all([cargarReportes(true, false), cargarNotificaciones()]);
+
+        if (event.tipo === "estado_actualizado") {
+            features.notify("Actualización de RunTrash", "Uno de tus reportes cambió de estado.");
+        }
+        if (event.tipo === "reporte_asignado") {
+            features.notify("Asignaron un operario", "Tu reporte ya tiene responsable.");
+        }
+    }, (status) => {
+        const service = document.querySelector(".service-status");
+        if (service) service.textContent = status === "conectado" ? "En tiempo real" : "Reconectando";
+    });
+    window.setInterval(() => {
+        cargarReportes(true);
+        cargarNotificaciones();
+    }, 30000);
+    window.addEventListener("online", () => {
+        mostrarToast("Conexión recuperada. Actualizando tus reportes...");
+        cargarReportes(true);
+    });
+    window.addEventListener("beforeunload", limpiarFormularioReporte);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#073c23">
+<meta name="description" content="Accede a RunTrash para reportar residuos y seguir su atención.">
+<link rel="icon" href="logos/logo.png" type="image/png">
+
+<title>RunTrash - Inicio</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    min-height:100vh;
+
+    background:
+        linear-gradient(
+            135deg,
+            #b09c58,
+            #d5902f
+        );
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    padding:20px;
+}
+
+
+/* =========================
+   CONTENEDOR
+========================= */
+
+.container{
+    width:100%;
+    max-width:1050px;
+    min-height:620px;
+
+    background:white;
+
+    border-radius:25px;
+
+    overflow:hidden;
+
+    display:grid;
+
+    grid-template-columns:42% 58%;
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.20);
+}
+
+
+/* =========================
+   PANEL IZQUIERDO
+========================= */
+
+.left{
+
+    background:
+        linear-gradient(
+            160deg,
+            #2e7d32,
+            #43a047
+        );
+
+    color:white;
+
+    padding:40px;
+
+    display:flex;
+    flex-direction:column;
+
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+}
+
+.logo{
+
+    width:100%;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    margin-bottom:20px;
+}
+
+.logo img{
+
+    width:400px;
+    max-width:100%;
+    height:auto;
+
+    display:block;
+}
+
+.left h2{
+
+    font-size:28px;
+
+    margin-bottom:12px;
+}
+
+.left p{
+
+    font-size:15px;
+
+    line-height:1.6;
+
+    opacity:.9;
+
+    max-width:350px;
+}
+
+
+/* =========================
+   PANEL DERECHO
+========================= */
+
+.right{
+
+    position:relative;
+
+    padding:45px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    overflow:hidden;
+}
+
+
+/* =========================
+   IMAGEN DECORATIVA
+========================= */
+
+.logo2{
+
+    position:absolute;
+
+    top:150px;
+    left:0;
+
+    width:100%;
+    height:550px;
+
+    display:flex;
+
+    justify-content:center;
+    align-items:center;
+
+    z-index:0;
+
+    pointer-events:none;
+
+    overflow:visible;
+}
+
+.logo2 img{
+
+    width:600px;
+
+    max-width:none;
+
+    height:auto;
+
+    display:block;
+
+    opacity:.30;
+}
+
+
+/* =========================
+   CONTENIDO SOBRE IMAGEN
+========================= */
+
+.right > *:not(.logo2){
+
+    position:relative;
+
+    z-index:2;
+}
+
+
+/* =========================
+   TITULO
+========================= */
+
+.form-title{
+
+    text-align:center;
+
+    margin-bottom:25px;
+}
+
+.form-title h1{
+
+    color:#2e7d32;
+
+    font-size:30px;
+
+    margin-bottom:7px;
+}
+
+.form-title p{
+
+    color:#777;
+
+    font-size:14px;
+}
+
+
+/* =========================
+   INPUTS
+========================= */
+
+.input-group{
+
+    margin-bottom:17px;
+}
+
+.input-group label{
+
+    display:block;
+
+    font-size:14px;
+
+    font-weight:bold;
+
+    color:#444;
+
+    margin-bottom:7px;
+}
+
+.input-group input{
+
+    width:100%;
+
+    padding:13px 15px;
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+    outline:none;
+
+    font-size:14px;
+
+    background:rgba(255,255,255,.92);
+
+    transition:.2s;
+}
+
+.input-group input:focus{
+
+    border-color:#2e7d32;
+
+    box-shadow:
+        0 0 0 3px rgba(46,125,50,.10);
+}
+
+
+/* =========================
+   TIPO DE USUARIO
+========================= */
+
+.tipo-label{
+
+    margin-bottom:9px !important;
+}
+
+.tipo-usuario{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap:8px;
+}
+
+.tipo-btn{
+
+    border:1px solid #ddd;
+
+    background:white;
+
+    color:#555;
+
+    padding:11px 5px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+    transition:.2s;
+}
+
+.tipo-btn:hover{
+
+    border-color:#2e7d32;
+
+    color:#2e7d32;
+}
+
+.tipo-btn.active{
+
+    background:#2e7d32;
+
+    color:white;
+
+    border-color:#2e7d32;
+
+    box-shadow:
+        0 4px 10px rgba(46,125,50,.20);
+}
+
+
+/* =========================
+   CAMPOS ESPECIALES
+========================= */
+
+.campo-extra{
+
+    display:none;
+}
+
+.campo-extra.visible{
+
+    display:block;
+}
+
+
+/* =========================
+   OLVIDASTE CONTRASEÑA
+========================= */
+
+.forgot{
+
+    text-align:right;
+
+    margin-top:7px;
+}
+
+.forgot a{
+
+    color:#2e7d32;
+
+    text-decoration:none;
+
+    font-size:12px;
+
+    font-weight:bold;
+}
+
+
+/* =========================
+   BOTON PRINCIPAL
+========================= */
+
+.main-button{
+
+    width:100%;
+
+    border:none;
+
+    background:#2e7d32;
+
+    color:white;
+
+    padding:14px;
+
+    border-radius:11px;
+
+    font-size:15px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    margin-top:5px;
+}
+
+.main-button:hover{
+
+    background:#256628;
+
+    transform:translateY(-1px);
+
+    box-shadow:
+        0 6px 15px rgba(46,125,50,.20);
+}
+
+
+/* =========================
+   REGISTRO
+========================= */
+
+.register-text{
+
+    text-align:center;
+
+    margin-top:20px;
+
+    color:#777;
+
+    font-size:13px;
+}
+
+.register-text a{
+
+    color:#2e7d32;
+
+    font-weight:bold;
+
+    text-decoration:none;
+
+    cursor:pointer;
+}
+
+
+/* =========================
+   MODAL REGISTRO
+========================= */
+
+.modal{
+
+    display:none;
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+        rgba(0,0,0,.55);
+
+    z-index:100;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:20px;
+}
+
+.modal.active{
+
+    display:flex;
+}
+
+.modal-box{
+
+    width:100%;
+
+    max-width:550px;
+
+    max-height:90vh;
+
+    overflow-y:auto;
+
+    background:white;
+
+    border-radius:22px;
+
+    padding:30px;
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,.30);
+
+    position:relative;
+}
+
+
+/* =========================
+   CERRAR
+========================= */
+
+.close{
+
+    position:absolute;
+
+    top:15px;
+    right:18px;
+
+    width:35px;
+    height:35px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:#f1f1f1;
+
+    font-size:20px;
+
+    cursor:pointer;
+
+    color:#555;
+}
+
+.close:hover{
+
+    background:#e5e5e5;
+}
+
+
+/* =========================
+   TITULO REGISTRO
+========================= */
+
+.register-title{
+
+    text-align:center;
+
+    margin-bottom:22px;
+}
+
+.register-title h2{
+
+    color:#2e7d32;
+
+    font-size:25px;
+
+    margin-bottom:5px;
+}
+
+.register-title p{
+
+    color:#777;
+
+    font-size:13px;
+}
+
+
+/* =========================
+   GRID FORMULARIO
+========================= */
+
+.form-grid{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2,1fr);
+
+    gap:0 15px;
+}
+
+.full{
+
+    grid-column:
+        1 / -1;
+}
+
+
+/* =========================
+   MENSAJES
+========================= */
+
+.mensaje{
+
+    display:none;
+
+    padding:11px;
+
+    border-radius:9px;
+
+    margin-bottom:15px;
+
+    font-size:13px;
+
+    text-align:center;
+}
+
+.mensaje.error{
+
+    display:block;
+
+    background:#ffebee;
+
+    color:#c62828;
+}
+
+.mensaje.exito{
+
+    display:block;
+
+    background:#e8f5e9;
+
+    color:#2e7d32;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media(max-width:850px){
+
+    .container{
+
+        grid-template-columns:1fr;
+
+        max-width:550px;
+    }
+
+    .left{
+
+        padding:25px;
+
+        min-height:260px;
+    }
+
+    .left p{
+
+        display:none;
+    }
+
+    .logo img{
+
+        width:300px;
+    }
+
+    .right{
+
+        padding:30px;
+    }
+
+}
+
+@media(max-width:550px){
+
+    body{
+
+        padding:10px;
+    }
+
+    .container{
+
+        border-radius:18px;
+    }
+
+    .right{
+
+        padding:25px 20px;
+    }
+
+    .form-grid{
+
+        grid-template-columns:1fr;
+    }
+
+    .full{
+
+        grid-column:auto;
+    }
+
+    .tipo-usuario{
+
+        grid-template-columns:1fr;
+    }
+
+    .modal-box{
+
+        padding:25px 20px;
+    }
+
+}
+
+</style>
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script src="ui.js" defer></script>
+<script src="features.js" defer></script>
+
+</head>
+
+
+<body class="auth-page">
+<a class="skip-link" href="#loginForm">Saltar al formulario</a>
+
+
+<!-- =====================================================
+     LOGIN
+===================================================== -->
+
+<div class="container">
+
+
+    <!-- PANEL IZQUIERDO -->
+
+    <div class="left">
+
+        <div class="logo">
+
+            <img
+                src="logos/logo.png"
+                alt="RunTrash"
+            >
+
+        </div>
+
+
+        <h2>
+            Una ciudad más limpia empieza contigo.
+        </h2>
+
+
+        <p>
+            Reporta residuos, coordina la atención y convierte cada acción
+            en un barrio más limpio para todos.
+        </p>
+
+
+        <div class="auth-proof">
+            <span class="auth-proof-icon" aria-hidden="true">✓</span>
+            <span>
+                <strong>Gestión simple y segura</strong>
+                <span>Un solo lugar para reportar y resolver</span>
+            </span>
+        </div>
+
+    </div>
+
+
+    <!-- PANEL DERECHO -->
+
+    <div class="right">
+
+
+        <!-- IMAGEN DE FONDO -->
+
+        <div class="logo2">
+
+            <img
+                src="logos/fondo.png"
+                alt=""
+            >
+
+        </div>
+
+
+        <!-- TITULO -->
+
+        <div class="form-title">
+
+            <h1>
+                Iniciar sesión
+            </h1>
+
+            <p>
+                Ingresa a tu cuenta de RunTrash
+            </p>
+
+        </div>
+
+        <div
+            class="mensaje"
+            id="mensajeLogin"
+            role="alert"
+            aria-live="assertive"
+        ></div>
+
+
+        <form
+            id="loginForm"
+            tabindex="-1"
+            novalidate
+            onsubmit="iniciarSesion(); return false"
+        >
+
+
+        <!-- TIPO DE USUARIO -->
+
+        <div class="input-group">
+
+            <label class="tipo-label" id="tipoUsuarioLabel">
+                Tipo de usuario
+            </label>
+
+
+            <div
+                class="tipo-usuario"
+                role="group"
+                aria-labelledby="tipoUsuarioLabel"
+            >
+
+                <button
+                    type="button"
+                    class="tipo-btn active"
+                    data-tipo="ciudadano"
+                    onclick="seleccionarTipo(this)"
+                >
+                    Ciudadano
+                </button>
+
+
+                <button
+                    type="button"
+                    class="tipo-btn"
+                    data-tipo="operario"
+                    onclick="seleccionarTipo(this)"
+                >
+                    Operario
+                </button>
+
+
+                <button
+                    type="button"
+                    class="tipo-btn"
+                    data-tipo="empresa"
+                    onclick="seleccionarTipo(this)"
+                >
+                    Empresa
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- CORREO -->
+
+        <div class="input-group">
+
+            <label for="email">
+                Correo electrónico
+            </label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                autocomplete="email"
+                placeholder="correo@ejemplo.com"
+                required
+            >
+
+        </div>
+
+
+        <!-- CONTRASEÑA -->
+
+        <div class="input-group">
+
+            <label for="password">
+                Contraseña
+            </label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="Ingresa tu contraseña"
+                required
+            >
+
+
+            <div class="forgot">
+
+                <button
+                    class="link-button"
+                    type="button"
+                    onclick="abrirRecuperacion()"
+                >
+                    ¿Olvidaste tu contraseña?
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- CODIGO OPERARIO -->
+
+        <div
+            class="input-group campo-extra"
+            id="campoOperarioLogin"
+        >
+
+            <label for="codigoOperarioLogin">
+                Código de operario
+            </label>
+
+            <input
+                type="text"
+                id="codigoOperarioLogin"
+                name="codigo_operario"
+                autocomplete="off"
+                placeholder="Ej: OP-2048"
+            >
+
+        </div>
+
+
+        <!-- NIT EMPRESA -->
+
+        <div
+            class="input-group campo-extra"
+            id="campoEmpresaLogin"
+        >
+
+            <label for="nitEmpresaLogin">
+                NIT de empresa
+            </label>
+
+            <input
+                type="text"
+                id="nitEmpresaLogin"
+                name="nit_empresa"
+                autocomplete="off"
+                inputmode="numeric"
+                placeholder="Ej: 900123456-7"
+            >
+
+        </div>
+
+
+        <!-- BOTON LOGIN -->
+
+        <button
+            class="main-button"
+            type="submit"
+        >
+
+            Iniciar sesión
+
+        </button>
+
+
+        <!-- REGISTRO -->
+
+        <div class="register-text">
+
+            ¿No tienes una cuenta?
+
+            <button
+                class="link-button"
+                type="button"
+                onclick="abrirRegistro()"
+            >
+                Regístrate
+            </button>
+
+        </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     MODAL REGISTRO
+===================================================== -->
+
+<div
+    class="modal"
+    id="modalRegistro"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="registroTitulo"
+    aria-hidden="true"
+>
+
+    <div class="modal-box">
+
+
+        <button
+            class="close"
+            type="button"
+            aria-label="Cerrar formulario de registro"
+            onclick="cerrarRegistro()"
+        >
+            ×
+        </button>
+
+
+        <div class="register-title">
+
+            <h2 id="registroTitulo">
+                Crear cuenta
+            </h2>
+
+            <p>
+                Regístrate en RunTrash
+            </p>
+
+        </div>
+
+
+        <div
+            id="mensajeRegistro"
+            class="mensaje"
+            role="alert"
+            aria-live="assertive"
+        ></div>
+
+
+        <!-- TIPO DE USUARIO -->
+
+        <div class="input-group">
+
+            <label class="tipo-label" id="tipoRegistroLabel">
+                Tipo de usuario
+            </label>
+
+
+            <div
+                class="tipo-usuario"
+                role="group"
+                aria-labelledby="tipoRegistroLabel"
+            >
+
+                <button
+                    type="button"
+                    class="tipo-btn active"
+                    data-tipo="ciudadano"
+                    onclick="seleccionarTipoRegistro(this)"
+                >
+                    Ciudadano
+                </button>
+
+
+                <button
+                    type="button"
+                    class="tipo-btn"
+                    data-tipo="operario"
+                    onclick="seleccionarTipoRegistro(this)"
+                >
+                    Operario
+                </button>
+
+
+                <button
+                    type="button"
+                    class="tipo-btn"
+                    data-tipo="empresa"
+                    onclick="seleccionarTipoRegistro(this)"
+                >
+                    Empresa
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="form-grid">
+
+
+            <!-- =========================
+                 CIUDADANO / OPERARIO
+            ========================= -->
+
+            <div
+                class="input-group"
+                id="registroNombreGrupo"
+            >
+
+                <label for="registroNombre">
+                    Nombre completo
+                </label>
+
+                <input
+                    type="text"
+                    id="registroNombre"
+                    placeholder="Ingresa tu nombre"
+                >
+
+            </div>
+
+
+            <!-- =========================
+                 EMPRESA
+            ========================= -->
+
+            <div
+                class="input-group campo-extra full"
+                id="registroNombreEmpresa"
+            >
+
+                <label for="nombreEmpresa">
+                    Nombre de la empresa
+                </label>
+
+                <input
+                    type="text"
+                    id="nombreEmpresa"
+                    placeholder="Ingresa el nombre de la empresa"
+                >
+
+            </div>
+
+
+            <div
+                class="input-group campo-extra"
+                id="registroNit"
+            >
+
+                <label for="registroNitInput">
+                    NIT de empresa
+                </label>
+
+                <input
+                    type="text"
+                    id="registroNitInput"
+                    placeholder="Ej: 900123456-7"
+                >
+
+            </div>
+
+
+            <!-- =========================
+                 OPERARIO
+            ========================= -->
+
+            <div
+                class="input-group campo-extra"
+                id="registroCodigoOperario"
+            >
+
+                <label for="codigoOperario">
+                    Código de operario
+                </label>
+
+                <input
+                    type="text"
+                    id="codigoOperario"
+                    placeholder="Código asignado"
+                >
+
+            </div>
+
+
+            <div
+                class="input-group campo-extra full"
+                id="registroZona"
+            >
+                <label for="zonaOperario">
+                    Localidad asignada
+                </label>
+                <select id="zonaOperario" name="zona_asignada">
+                    <option value="">Selecciona una localidad</option>
+                </select>
+            </div>
+
+
+            <!-- =========================
+                 CORREO
+            ========================= -->
+
+            <div class="input-group full">
+
+                <label for="registroEmail">
+                    Correo electrónico
+                </label>
+
+                <input
+                    type="email"
+                    id="registroEmail"
+                    placeholder="correo@ejemplo.com"
+                >
+
+            </div>
+
+
+            <!-- =========================
+                 CONTRASEÑAS
+            ========================= -->
+
+            <div class="input-group">
+
+                <label for="registroPassword">
+                    Contraseña
+                </label>
+
+                <input
+                    type="password"
+                    id="registroPassword"
+                    placeholder="Crea una contraseña"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label for="registroPassword2">
+                    Confirmar contraseña
+                </label>
+
+                <input
+                    type="password"
+                    id="registroPassword2"
+                    placeholder="Repite la contraseña"
+                >
+
+            </div>
+
+        </div>
+
+
+        <!-- CREAR CUENTA -->
+
+        <button
+            class="main-button"
+            onclick="registrarUsuario()"
+        >
+
+            Crear cuenta
+
+        </button>
+
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     RECUPERAR CONTRASEÑA
+===================================================== -->
+
+<div
+    class="modal"
+    id="modalRecuperacion"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloRecuperacion"
+    aria-hidden="true"
+>
+
+    <div class="modal-box modal-box-compact recuperacion-box">
+
+        <button
+            class="close"
+            type="button"
+            aria-label="Cerrar recuperación"
+            onclick="cerrarRecuperacion()"
+        >
+            ×
+        </button>
+
+        <div class="info-icon" aria-hidden="true">🔐</div>
+        <h2 id="tituloRecuperacion">Recuperar acceso</h2>
+        <p class="info-lead">
+            Te enviamos un código de 6 dígitos para que definas una nueva contraseña.
+        </p>
+
+        <!-- Indicador de pasos -->
+        <ol class="pasos-recuperacion" id="pasosRecuperacion" aria-label="Pasos de recuperación">
+            <li class="is-activo" data-paso="1"><span>1</span>Código</li>
+            <li data-paso="2"><span>2</span>Verificar</li>
+            <li data-paso="3"><span>3</span>Nueva clave</li>
+        </ol>
+
+        <div class="recuperacion-error" id="recuperacionError" role="alert" hidden></div>
+
+        <!-- Paso 1: solicitar código -->
+        <form class="recuperacion-paso" id="pasoSolicitar" novalidate>
+            <div class="input-group">
+                <label for="correoRecuperacion">Correo electrónico</label>
+                <input
+                    type="email"
+                    id="correoRecuperacion"
+                    name="correoRecuperacion"
+                    placeholder="correo@ejemplo.com"
+                    autocomplete="email"
+                    required
+                >
+            </div>
+            <button class="main-button" type="submit" id="btnSolicitarCodigo">
+                Enviar código
+            </button>
+        </form>
+
+        <!-- Paso 2: verificar código -->
+        <form class="recuperacion-paso" id="pasoVerificar" novalidate hidden>
+            <div class="codigo-enviado" id="codigoEnviado" hidden>
+                <strong>Modo demostración</strong>
+                <p>Sin servidor de correo, el código se muestra aquí:</p>
+                <code id="codigoDemo">000000</code>
+            </div>
+
+            <div class="input-group">
+                <label for="codigoRecuperacion">Código de 6 dígitos</label>
+                <input
+                    type="text"
+                    id="codigoRecuperacion"
+                    name="codigoRecuperacion"
+                    inputmode="numeric"
+                    pattern="[0-9]{6}"
+                    maxlength="6"
+                    placeholder="000000"
+                    autocomplete="one-time-code"
+                    required
+                >
+            </div>
+
+            <div class="modal-actions split-actions">
+                <button class="secondary" type="button" onclick="volverPasoRecuperacion(1)">
+                    Reenviar
+                </button>
+                <button class="primary" type="submit" id="btnVerificarCodigo">
+                    Verificar
+                </button>
+            </div>
+        </form>
+
+        <!-- Paso 3: nueva contraseña -->
+        <form class="recuperacion-paso" id="pasoNuevaClave" novalidate hidden>
+            <div class="input-group">
+                <label for="nuevaPassword">Nueva contraseña</label>
+                <input
+                    type="password"
+                    id="nuevaPassword"
+                    name="nuevaPassword"
+                    placeholder="Mínimo 6 caracteres"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
+            </div>
+
+            <div class="input-group">
+                <label for="confirmarPassword">Repetir contraseña</label>
+                <input
+                    type="password"
+                    id="confirmarPassword"
+                    name="confirmarPassword"
+                    placeholder="Repite la contraseña"
+                    autocomplete="new-password"
+                    minlength="6"
+                    required
+                >
+            </div>
+
+            <div class="modal-actions split-actions">
+                <button class="secondary" type="button" onclick="volverPasoRecuperacion(2)">
+                    Atrás
+                </button>
+                <button class="primary" type="submit" id="btnGuardarNuevaClave">
+                    Guardar clave
+                </button>
+            </div>
+        </form>
+
+        <div class="recuperacion-exito" id="recuperacionExito" hidden>
+            <span aria-hidden="true">✅</span>
+            <strong>Contraseña actualizada</strong>
+            <p>Ya puedes iniciar sesión con tu nueva clave.</p>
+            <button class="main-button" type="button" onclick="cerrarRecuperacion()">
+                Ir al inicio de sesión
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let tipoSeleccionado = "ciudadano";
+
+let tipoRegistro = "ciudadano";
+
+/*
+Base de la API, en este orden de prioridad:
+  1. ?api=https://servidor...  (parametro manual, para pruebas)
+  2. window.RUNTRASH_API      (config.js, util al desplegar)
+  3. mismo origen             (todo junto en un solo dominio)
+  4. localhost:3000           (solo al abrir el archivo con doble clic)
+*/
+const API = (new URLSearchParams(location.search).get("api")
+    || window.RUNTRASH_API
+    || (location.protocol === "file:" ? "http://localhost:3000" : "")
+    || location.origin).replace(/\/+$/, "");
+
+
+/* =====================================================
+   SELECCIONAR TIPO EN LOGIN
+===================================================== */
+
+function seleccionarTipo(boton){
+
+    const botones =
+        document.querySelectorAll(
+            '.right .tipo-btn'
+        );
+
+    botones.forEach(function(btn){
+
+        btn.classList.remove("active");
+
+    });
+
+
+    boton.classList.add("active");
+
+
+    tipoSeleccionado =
+        boton.getAttribute("data-tipo");
+
+
+    const campoOperario =
+        document.getElementById(
+            "campoOperarioLogin"
+        );
+
+    const campoEmpresa =
+        document.getElementById(
+            "campoEmpresaLogin"
+        );
+
+
+    campoOperario.classList.remove(
+        "visible"
+    );
+
+    campoEmpresa.classList.remove(
+        "visible"
+    );
+
+
+    if(tipoSeleccionado === "operario"){
+
+        campoOperario.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    if(tipoSeleccionado === "empresa"){
+
+        campoEmpresa.classList.add(
+            "visible"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   RECUPERAR CONTRASEÑA
+===================================================== */
+
+const recuperacionEstado = {
+    correo: "",
+    paso: 1
+};
+
+function mostrarErrorRecuperacion(mensaje) {
+    const caja = document.getElementById("recuperacionError");
+    caja.textContent = mensaje || "";
+    caja.hidden = !mensaje;
+}
+
+function pintarPasoRecuperacion(paso) {
+    recuperacionEstado.paso = paso;
+
+    document.getElementById("pasoSolicitar").hidden = paso !== 1;
+    document.getElementById("pasoVerificar").hidden = paso !== 2;
+    document.getElementById("pasoNuevaClave").hidden = paso !== 3;
+    document.getElementById("recuperacionExito").hidden = true;
+    document.getElementById("pasosRecuperacion").hidden = false;
+
+    document.querySelectorAll("#pasosRecuperacion li").forEach((item) => {
+        const numero = Number(item.dataset.paso);
+        item.classList.toggle("is-activo", numero === paso);
+        item.classList.toggle("is-hecho", numero < paso);
+    });
+
+    mostrarErrorRecuperacion("");
+}
+
+function abrirRecuperacion() {
+    document.getElementById("modalRecuperacion").classList.add("active");
+    document.getElementById("modalRecuperacion").setAttribute("aria-hidden", "false");
+
+    const correoLogin = document.getElementById("email");
+    recuperacionEstado.correo = correoLogin?.value?.trim() || "";
+    document.getElementById("correoRecuperacion").value = recuperacionEstado.correo;
+
+    pintarPasoRecuperacion(1);
+    document.getElementById("correoRecuperacion").focus();
+}
+
+function cerrarRecuperacion() {
+    const modal = document.getElementById("modalRecuperacion");
+    modal.classList.remove("active");
+    modal.setAttribute("aria-hidden", "true");
+
+    document.getElementById("codigoEnviado").hidden = true;
+    document.getElementById("recuperacionExito").hidden = true;
+    document.getElementById("codigoRecuperacion").value = "";
+    document.getElementById("nuevaPassword").value = "";
+    document.getElementById("confirmarPassword").value = "";
+
+    pintarPasoRecuperacion(1);
+    document.getElementById("email")?.focus();
+}
+
+function volverPasoRecuperacion(paso) {
+    pintarPasoRecuperacion(paso);
+
+    if (paso === 2) {
+        document.getElementById("codigoRecuperacion").focus();
+    }
+}
+
+function activarBotonRecuperacion(id, activo) {
+    const boton = document.getElementById(id);
+    boton.disabled = !activo;
+    boton.style.opacity = activo ? "1" : "0.6";
+    boton.style.pointerEvents = activo ? "auto" : "none";
+}
+
+document.getElementById("pasoSolicitar").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+
+    const correo = document.getElementById("correoRecuperacion").value.trim().toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        mostrarErrorRecuperacion("Ingresa un correo válido.");
+        return;
+    }
+
+    mostrarErrorRecuperacion("");
+    activarBotonRecuperacion("btnSolicitarCodigo", false);
+
+    try {
+        const respuesta = await fetch(`${API}/api/password/recuperar/solicitar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ correo })
+        });
+
+        const data = await respuesta.json();
+
+        if (!respuesta.ok) {
+            mostrarErrorRecuperacion(data.mensaje || "No se pudo enviar el código.");
+            return;
+        }
+
+        recuperacionEstado.correo = correo;
+
+        if (data.codigo_demo) {
+            document.getElementById("codigoDemo").textContent = data.codigo_demo;
+            document.getElementById("codigoEnviado").hidden = false;
+        }
+
+        pintarPasoRecuperacion(2);
+        document.getElementById("codigoRecuperacion").focus();
+    } catch (error) {
+        mostrarErrorRecuperacion("No hay conexión con el servidor. Intenta de nuevo.");
+    } finally {
+        activarBotonRecuperacion("btnSolicitarCodigo", true);
+    }
+});
+
+document.getElementById("codigoRecuperacion").addEventListener("input", (evento) => {
+    evento.target.value = evento.target.value.replace(/\D/g, "").slice(0, 6);
+});
+
+document.getElementById("pasoVerificar").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+
+    const codigo = document.getElementById("codigoRecuperacion").value.trim();
+
+    if (!/^\d{6}$/.test(codigo)) {
+        mostrarErrorRecuperacion("El código debe tener 6 dígitos.");
+        return;
+    }
+
+    mostrarErrorRecuperacion("");
+    activarBotonRecuperacion("btnVerificarCodigo", false);
+
+    try {
+        const respuesta = await fetch(`${API}/api/password/recuperar/verificar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                correo: recuperacionEstado.correo,
+                codigo
+            })
+        });
+
+        const data = await respuesta.json();
+
+        if (!respuesta.ok) {
+            const detalle = data.intentos_restantes !== undefined
+                ? ` Te quedan ${data.intentos_restantes} intentos.`
+                : "";
+            mostrarErrorRecuperacion((data.mensaje || "Código incorrecto.") + detalle);
+            return;
+        }
+
+        pintarPasoRecuperacion(3);
+        document.getElementById("nuevaPassword").focus();
+    } catch (error) {
+        mostrarErrorRecuperacion("No hay conexión con el servidor. Intenta de nuevo.");
+    } finally {
+        activarBotonRecuperacion("btnVerificarCodigo", true);
+    }
+});
+
+document.getElementById("pasoNuevaClave").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+
+    const password = document.getElementById("nuevaPassword").value;
+    const confirmacion = document.getElementById("confirmarPassword").value;
+    const codigo = document.getElementById("codigoRecuperacion").value.trim();
+
+    if (password.length < 6) {
+        mostrarErrorRecuperacion("La contraseña debe tener mínimo 6 caracteres.");
+        return;
+    }
+
+    if (password !== confirmacion) {
+        mostrarErrorRecuperacion("Las contraseñas no coinciden.");
+        return;
+    }
+
+    mostrarErrorRecuperacion("");
+    activarBotonRecuperacion("btnGuardarNuevaClave", false);
+
+    try {
+        const respuesta = await fetch(`${API}/api/password/recuperar/restablecer`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                correo: recuperacionEstado.correo,
+                codigo,
+                password
+            })
+        });
+
+        const data = await respuesta.json();
+
+        if (!respuesta.ok) {
+            mostrarErrorRecuperacion(data.mensaje || "No se pudo actualizar la contraseña.");
+            return;
+        }
+
+        document.getElementById("pasoNuevaClave").hidden = true;
+        document.getElementById("pasosRecuperacion").hidden = true;
+        document.getElementById("recuperacionExito").hidden = false;
+        document.getElementById("codigoEnviado").hidden = true;
+
+        document.getElementById("email").value = recuperacionEstado.correo;
+    } catch (error) {
+        mostrarErrorRecuperacion("No hay conexión con el servidor. Intenta de nuevo.");
+    } finally {
+        activarBotonRecuperacion("btnGuardarNuevaClave", true);
+    }
+});
+
+
+/* =====================================================
+   ABRIR REGISTRO
+===================================================== */
+
+function abrirRegistro(){
+
+    document
+        .getElementById("modalRegistro")
+        .classList.add("active");
+
+}
+
+
+/* =====================================================
+   CERRAR REGISTRO
+===================================================== */
+
+function cerrarRegistro(){
+
+    document
+        .getElementById("modalRegistro")
+        .classList.remove("active");
+
+}
+
+
+/* =====================================================
+   SELECCIONAR TIPO EN REGISTRO
+===================================================== */
+
+function seleccionarTipoRegistro(boton){
+
+    const modal =
+        document.getElementById(
+            "modalRegistro"
+        );
+
+
+    const botones =
+        modal.querySelectorAll(
+            ".tipo-btn"
+        );
+
+
+    botones.forEach(function(btn){
+
+        btn.classList.remove("active");
+
+    });
+
+
+    boton.classList.add("active");
+
+
+    tipoRegistro =
+        boton.getAttribute("data-tipo");
+
+
+    const empresaNombre =
+        document.getElementById(
+            "registroNombreEmpresa"
+        );
+
+    const empresaNit =
+        document.getElementById(
+            "registroNit"
+        );
+
+    const operarioCodigo =
+        document.getElementById(
+            "registroCodigoOperario"
+        );
+
+    const operarioZona =
+        document.getElementById(
+            "registroZona"
+        );
+
+    const nombreGrupo =
+        document.getElementById(
+            "registroNombreGrupo"
+        );
+
+
+    /* OCULTAR CAMPOS ESPECIALES */
+
+    empresaNombre.classList.remove(
+        "visible"
+    );
+
+    empresaNit.classList.remove(
+        "visible"
+    );
+
+    operarioCodigo.classList.remove(
+        "visible"
+    );
+
+    operarioZona.classList.remove(
+        "visible"
+    );
+
+
+    nombreGrupo.style.display =
+        "block";
+
+
+    /* =========================
+       CIUDADANO
+    ========================= */
+
+    if(tipoRegistro === "ciudadano"){
+
+        nombreGrupo.style.display =
+            "block";
+
+    }
+
+
+    /* =========================
+       OPERARIO
+    ========================= */
+
+    if(tipoRegistro === "operario"){
+
+        nombreGrupo.style.display =
+            "block";
+
+        operarioCodigo.classList.add(
+            "visible"
+        );
+
+        operarioZona.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    /* =========================
+       EMPRESA
+    ========================= */
+
+    if(tipoRegistro === "empresa"){
+
+        nombreGrupo.style.display =
+            "none";
+
+        empresaNombre.classList.add(
+            "visible"
+        );
+
+        empresaNit.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    /* LIMPIAR CAMPOS ESPECIALES */
+
+    document
+        .getElementById("codigoOperario")
+        .value = "";
+
+    document
+        .getElementById("zonaOperario")
+        .value = "";
+
+    document
+        .getElementById("nombreEmpresa")
+        .value = "";
+
+    document
+        .getElementById("registroNitInput")
+        .value = "";
+
+}
+
+
+/* =====================================================
+   REGISTRAR USUARIO
+===================================================== */
+
+ async function registrarUsuario(){
+
+    const mensaje = document.getElementById("mensajeRegistro");
+    mensaje.className = "mensaje";
+
+    const email = document.getElementById("registroEmail").value.trim().toLowerCase();
+    const password = document.getElementById("registroPassword").value;
+    const password2 = document.getElementById("registroPassword2").value;
+
+    if(!email || !password || !password2){
+        mostrarError("Completa todos los campos obligatorios.");
+        return;
+    }
+
+    if(password !== password2){
+        mostrarError("Las contraseñas no coinciden.");
+        return;
+    }
+
+    if(password.length < 6){
+        mostrarError("La contraseña debe tener mínimo 6 caracteres.");
+        return;
+    }
+
+    let nombre = "";
+    let zonaOperario = null;
+    let codigoOperario = null;
+    let nitEmpresa = null;
+
+    if(tipoRegistro === "ciudadano"){
+
+        nombre = document.getElementById("registroNombre").value.trim();
+
+        if(!nombre){
+            mostrarError("Ingresa tu nombre completo.");
+            return;
+        }
+    }
+
+    if(tipoRegistro === "operario"){
+
+        nombre = document.getElementById("registroNombre").value.trim();
+        zonaOperario = document.getElementById("zonaOperario").value;
+        codigoOperario = document.getElementById("codigoOperario").value.trim();
+
+        if(!nombre){
+            mostrarError("Ingresa el nombre del operario.");
+            return;
+        }
+
+        if(!zonaOperario){
+            mostrarError("Selecciona la localidad del operario.");
+            return;
+        }
+
+        if(!codigoOperario){
+            mostrarError("Ingresa el código de operario.");
+            return;
+        }
+    }
+
+    if(tipoRegistro === "empresa"){
+
+        nombre = document.getElementById("nombreEmpresa").value.trim();
+        nitEmpresa = document.getElementById("registroNitInput").value.trim();
+
+        if(!nombre){
+            mostrarError("Ingresa el nombre de la empresa.");
+            return;
+        }
+
+        if(!nitEmpresa){
+            mostrarError("Ingresa el NIT de la empresa.");
+            return;
+        }
+    }
+
+    try{
+
+        const respuesta = await fetch(
+            API + "/api/registro",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    nombre: nombre,
+                    correo: email,
+                    password: password,
+                    tipo_usuario: tipoRegistro,
+                    codigo_operario: codigoOperario,
+                    zona_asignada: zonaOperario,
+                    empresa_id: null,
+                    nit_empresa: nitEmpresa
+                })
+            }
+        );
+
+        const resultado = await respuesta.json();
+
+        console.log("Respuesta registro:", resultado);
+
+        if(!respuesta.ok){
+
+            mostrarError(
+                resultado.mensaje ||
+                "No se pudo registrar el usuario."
+            );
+
+            return;
+        }
+
+        mensaje.className = "mensaje exito";
+        mensaje.innerText = "¡Cuenta creada correctamente!";
+
+        console.log("Usuario registrado:", resultado.usuario);
+
+        document.getElementById("registroNombre").value = "";
+        document.getElementById("registroEmail").value = "";
+        document.getElementById("registroPassword").value = "";
+        document.getElementById("registroPassword2").value = "";
+        document.getElementById("codigoOperario").value = "";
+        document.getElementById("zonaOperario").value = "";
+        document.getElementById("nombreEmpresa").value = "";
+        document.getElementById("registroNitInput").value = "";
+
+        const botonCiudadano = document.querySelector(
+            '#modalRegistro .tipo-btn[data-tipo="ciudadano"]'
+        );
+
+        if(botonCiudadano){
+            seleccionarTipoRegistro(botonCiudadano);
+        }
+
+    } catch(error){
+
+        console.error(
+            "Error conectando con el servidor:",
+            error
+        );
+
+        mostrarError(
+            "No se pudo conectar con el servidor."
+        );
+    }
+}
+
+function mostrarError(texto){
+
+    const mensaje =
+        document.getElementById(
+            "mensajeRegistro"
+        );
+
+
+    mensaje.className =
+        "mensaje error";
+
+
+    mensaje.innerText =
+        texto;
+
+}
+
+
+/* =====================================================
+   INICIAR SESION
+===================================================== */
+
+function mostrarErrorLogin(texto){
+
+    const mensaje = document.getElementById("mensajeLogin");
+
+    mensaje.className = "mensaje error";
+    mensaje.innerText = texto;
+
+}
+
+async function iniciarSesion(){
+
+    const mensaje = document.getElementById("mensajeLogin");
+    mensaje.className = "mensaje";
+    mensaje.innerText = "";
+
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const password = document.getElementById("password").value;
+
+    if(!email || !password){
+        mostrarErrorLogin("Ingresa tu correo y contraseña.");
+        return;
+    }
+
+    let codigo = "";
+    let nit = "";
+
+    if(tipoSeleccionado === "operario"){
+        codigo = document
+            .getElementById("codigoOperarioLogin")
+            .value
+            .trim();
+    }
+
+    if(tipoSeleccionado === "empresa"){
+        nit = document
+            .getElementById("nitEmpresaLogin")
+            .value
+            .trim();
+    }
+
+    try{
+
+        const respuesta = await fetch(
+            API + "/api/login",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    correo: email,
+                    password: password,
+                    tipo_usuario: tipoSeleccionado,
+                    codigo_operario: codigo,
+                    nit_empresa: nit
+                })
+            }
+        );
+
+        const resultado = await respuesta.json();
+
+        console.log("Respuesta login:", resultado);
+
+        if(!respuesta.ok){
+
+            mostrarErrorLogin(
+                resultado.mensaje ||
+                "Correo o contraseña incorrectos."
+            );
+
+            return;
+        }
+
+        const usuario = resultado.usuario;
+
+        // El rol real siempre viene de PostgreSQL. Así la misma cuenta
+        // puede ingresar desde la web y desde la app aunque el selector
+        // visual no coincida.
+        localStorage.setItem(
+            "runtrash_user",
+            JSON.stringify(usuario)
+        );
+
+        localStorage.setItem(
+            "runtrash_token",
+            resultado.token
+        );
+
+        console.log("Usuario guardado:", usuario);
+
+        if(usuario.tipo_usuario === "ciudadano"){
+            window.location.href = "ciudadano.html";
+            return;
+        }
+
+        if(usuario.tipo_usuario === "operario"){
+            window.location.href = "operario.html";
+            return;
+        }
+
+        if(usuario.tipo_usuario === "empresa"){
+            window.location.href = "empresa.html";
+            return;
+        }
+
+    } catch(error){
+
+        console.error(
+            "Error conectando con el servidor:",
+            error
+        );
+
+        mostrarErrorLogin(
+            "No se pudo conectar con el servidor."
+        );
+    }
+}
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    const zona = document.getElementById("zonaOperario");
+    const localidades = window.RunTrashFeatures?.localidades || [];
+
+    zona.innerHTML = '<option value="">Selecciona una localidad</option>'
+        + localidades.map(function(localidad){
+            return '<option value="' + localidad + '">' + localidad + '</option>';
+        }).join("");
+
+});
+
+
+document
+    .getElementById("modalRegistro")
+    .addEventListener(
+        "click",
+        function(event){
+
+            if(
+                event.target === this
+            ){
+
+                cerrarRegistro();
+
+            }
+
+        }
+    );
+
+</script>
+
+</body>
+
+</html>

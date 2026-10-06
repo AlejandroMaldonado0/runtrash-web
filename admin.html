@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#073c23">
+<meta name="description" content="Panel administrador de RunTrash para usuarios, configuración y estadísticas.">
+<link rel="icon" href="logos/logo.png" type="image/png">
+<title>RunTrash - Administrador</title>
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script src="ui.js" defer></script>
+<script src="features.js" defer></script>
+</head>
+<body class="dashboard-page role-admin">
+<a class="skip-link" href="#contenidoPrincipal">Saltar al contenido</a>
+
+<div class="admin-login-gate" id="adminLoginGate">
+    <div class="admin-login-card">
+        <div class="admin-login-logo"><img src="logos/logo.png" alt="RunTrash"></div>
+        <span class="admin-eyebrow">ACCESO RESTRINGIDO</span>
+        <h1>Administración RunTrash</h1>
+        <p>Ingresa las credenciales de administrador para continuar.</p>
+        <form id="adminLoginForm" onsubmit="iniciarSesionAdmin(event)">
+            <div class="input-group"><label for="adminLoginEmail">Correo</label><input id="adminLoginEmail" type="email" autocomplete="username" required></div>
+            <div class="input-group"><label for="adminLoginPassword">Contraseña</label><input id="adminLoginPassword" type="password" autocomplete="current-password" required></div>
+            <div class="mensaje error" id="adminLoginMessage" hidden></div>
+            <button class="admin-primary-button full-admin-button" id="adminLoginButton" type="submit">Entrar al panel</button>
+        </form>
+        <a class="admin-back-link" href="index.html">← Volver al inicio</a>
+    </div>
+</div>
+
+<div class="app" id="adminApp" hidden>
+    <button class="sidebar-backdrop" type="button" data-sidebar-backdrop aria-label="Cerrar menú"></button>
+
+    <aside class="sidebar" id="sidebar" data-sidebar>
+        <button class="sidebar-close" type="button" data-sidebar-close aria-label="Cerrar menú">×</button>
+        <div class="sidebar-logo"><img src="logos/logo.png" alt="RunTrash"></div>
+        <div class="user-box">
+            <div class="user-icon" aria-hidden="true">🛡️</div>
+            <div class="user-info"><strong>Administrador</strong><span>Sistema RunTrash</span></div>
+        </div>
+        <nav class="menu" aria-label="Navegación administrativa">
+            <a href="#resumen" class="active" aria-current="page" onclick="irA('#resumen',this);return false"><span class="menu-icon">📊</span>Resumen</a>
+            <a href="#usuarios" onclick="irA('#usuarios',this);return false"><span class="menu-icon">👥</span>Usuarios</a>
+            <a href="#configuracion" onclick="irA('#configuracion',this);return false"><span class="menu-icon">⚙️</span>Configuración</a>
+            <a href="#actividad" onclick="irA('#actividad',this);return false"><span class="menu-icon">🕘</span>Actividad</a>
+            <a href="#" onclick="mostrarPerfil();return false"><span class="menu-icon">👤</span>Mi perfil</a>
+        </nav>
+        <div class="logout"><a href="index.html" onclick="cerrarSesion();return false"><span class="menu-icon">🚪</span>Cerrar sesión</a></div>
+    </aside>
+
+    <main class="main" id="contenidoPrincipal" tabindex="-1">
+        <div class="topbar">
+            <button class="menu-toggle" type="button" data-sidebar-toggle aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menú">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div class="welcome"><div class="welcome-copy"><h1>Centro de administración</h1><p>Gestiona usuarios, configuración y operación de RunTrash.</p><span class="today" data-current-date></span></div></div>
+            <div class="topbar-actions">
+                <span class="service-status" id="systemStatus">Conectando</span>
+                <button class="notification" type="button" onclick="mostrarNotificaciones()" aria-label="Ver notificaciones">
+                    🔔
+                    <span class="notification-count" id="notificationCount" hidden>0</span>
+                </button>
+                <button class="notification" type="button" onclick="refrescarTodo()" aria-label="Actualizar panel">↻</button>
+            </div>
+        </div>
+
+        <section class="admin-hero" id="resumen">
+            <div>
+                <span class="admin-eyebrow">PANEL DE CONTROL</span>
+                <h2>La operación de RunTrash, en un solo lugar</h2>
+                <p>Supervisa la actividad, habilita cuentas y ajusta las reglas operativas del sistema.</p>
+            </div>
+            <button class="admin-primary-button" type="button" onclick="abrirCrearUsuario()">＋ Crear usuario</button>
+        </section>
+
+        <section class="stats admin-stats" aria-label="Resumen general">
+            <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-info"><span>Usuarios</span><strong id="adminUsuarios">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-info"><span>Reportes</span><strong id="adminReportes">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-info"><span>Pendientes</span><strong id="adminPendientes">0</strong></div></div>
+            <div class="stat-card"><div class="stat-icon">📆</div><div class="stat-info"><span>Hoy</span><strong id="adminHoy">0</strong></div></div>
+        </section>
+
+        <section class="section admin-analytics">
+            <div class="section-header"><div><h2>Demanda por localidad</h2><p class="section-subtitle">Reportes de los últimos 15 días.</p></div><span class="filter-badge">15 días</span></div>
+            <div class="sector-list" id="adminSectores"></div>
+        </section>
+
+        <section class="section" id="usuarios">
+            <div class="section-header reports-header">
+                <div><h2>Usuarios del sistema</h2><p class="section-subtitle">Crea cuentas, asigna roles y controla su acceso.</p></div>
+                <div class="section-actions"><button class="toolbar-button" type="button" onclick="abrirCrearUsuario()">＋ Crear usuario</button></div>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead><tr><th>Usuario</th><th>Rol</th><th>Zona / NIT</th><th>Reportes</th><th>Estado</th><th>Acciones</th></tr></thead>
+                    <tbody id="adminUsuariosTabla"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section" id="configuracion">
+            <div class="section-header"><div><h2>Configuración del sistema</h2><p class="section-subtitle">Los cambios se aplican a todos los usuarios.</p></div></div>
+            <form class="config-form" id="configForm">
+                <label><span>Límite de reportes por ciudadano</span><input type="number" name="limite_reportes_diarios" min="1" max="20" required><small>Entre 1 y 20 reportes diarios.</small></label>
+                <label><span>Puntos máximos por ruta</span><input type="number" name="limite_ruta" min="1" max="50" required><small>Entre 1 y 50 paradas.</small></label>
+                <label><span>Retención de datos</span><input type="number" name="retencion_dias" min="1" max="365" required><small>Días que se conservarán los reportes.</small></label>
+                <label><span>Precisión GPS objetivo</span><input type="number" name="distancia_gps_maxima" min="5" max="100" required><small>Distancia máxima recomendada en metros.</small></label>
+                <button class="admin-primary-button" id="saveConfigButton" type="submit">Guardar configuración</button>
+            </form>
+        </section>
+
+        <section class="section" id="actividad">
+            <div class="section-header"><div><h2>Actividad reciente</h2><p class="section-subtitle">Últimos reportes registrados en la ciudad.</p></div></div>
+            <div class="admin-activity" id="adminActividad"></div>
+        </section>
+    </main>
+</div>
+
+<div class="modal" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle" aria-hidden="true" onclick="cerrarModal(event)">
+    <div class="modal-card" id="adminModalCard">
+        <div class="modal-header"><h3 id="adminModalTitle">Detalle</h3><button class="close" type="button" aria-label="Cerrar" onclick="cerrarModal()">×</button></div>
+        <div id="adminModalContent"></div>
+    </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*
+Base de la API, en este orden de prioridad:
+  1. ?api=https://servidor...  (parametro manual, para pruebas)
+  2. window.RUNTRASH_API      (config.js, util al desplegar)
+  3. mismo origen             (todo junto en un solo dominio)
+  4. localhost:3000           (solo al abrir el archivo con doble clic)
+*/
+const API = (new URLSearchParams(location.search).get("api")
+    || window.RUNTRASH_API
+    || (location.protocol === "file:" ? "http://localhost:3000" : "")
+    || location.origin).replace(/\/+$/, "");
+let features;
+let token = localStorage.getItem("runtrash_token");
+let usuarioActual = obtenerUsuario();
+let resumen = {};
+let usuarios = [];
+let configuracion = {};
+let editingUserId = null;
+let adminEvents = null;
+let toastTimer = null;
+let notificaciones = { notificaciones: [], noLeidas: 0 };
+
+function obtenerUsuario() {
+    try { return JSON.parse(localStorage.getItem("runtrash_user")); }
+    catch { return null; }
+}
+
+function actualizarNotificaciones() {
+    const badge = document.getElementById("notificationCount");
+    if (!badge) return;
+    const total = notificaciones.noLeidas;
+    badge.textContent = total > 99 ? "99+" : String(total);
+    badge.hidden = total === 0;
+}
+
+async function cargarNotificaciones() {
+    try {
+        notificaciones = await features.cargarNotificaciones(API);
+        actualizarNotificaciones();
+    } catch (error) {
+        console.warn("No se pudieron cargar las notificaciones:", error);
+    }
+}
+
+function abrirDetalleNotificacion(tipo, id) {
+    if (tipo === "usuario") {
+        const enlace = [...document.querySelectorAll(".menu a")]
+            .find((item) => item.getAttribute("href") === "#usuarios");
+        if (enlace) irA("#usuarios", enlace);
+        window.setTimeout(() => editarUsuarioAdmin(id), 260);
+        return;
+    }
+
+    if (tipo === "reporte") {
+        verReporteAdmin(id);
+    }
+}
+
+function mostrarNotificaciones() {
+    const lista = notificaciones.notificaciones;
+    const estadoAlertas = features.textoBotonAlertas();
+
+    const overlay = document.createElement("div");
+    overlay.className = "modal show";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Notificaciones de administración");
+
+    const card = document.createElement("div");
+    card.className = "modal-card modal-card-notifications";
+    card.innerHTML = `
+        <div class="modal-header">
+            <div>
+                <h2 id="tituloNotificacionesAdmin">Notificaciones</h2>
+                <p class="section-subtitle">Actividad reciente de la plataforma.</p>
+            </div>
+            <button class="close" type="button" aria-label="Cerrar">×</button>
+        </div>
+        <div id="adminNotifContenido"></div>`;
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const barra = `
+        <div class="notification-toolbar">
+            <p>${notificaciones.noLeidas > 0
+                ? `Tienes ${notificaciones.noLeidas} ${notificaciones.noLeidas === 1 ? "aviso" : "avisos"} sin leer.`
+                : "Estás al día con tus avisos."}</p>
+            ${notificaciones.noLeidas > 0
+                ? `<button class="secondary" type="button" data-marcar-leidas>Marcar como leídas</button>`
+                : ""}
+        </div>
+        <div class="alerta-estado ${estadoAlertas.activo ? "is-activa" : ""}">
+            <span aria-hidden="true">${estadoAlertas.activo ? "🔔" : "🔕"}</span>
+            <span>${estadoAlertas.activo
+                ? "Las alertas del navegador están activadas."
+                : estadoAlertas.bloqueado
+                    ? "Tu navegador bloqueó las alertas. Habilítalas en los permisos del sitio."
+                    : "Activa las alertas para recibir avisos aunque la pestaña esté en segundo plano."}</span>
+            ${estadoAlertas.activo ? "" : `<button type="button" onclick="activarNotificaciones()" ${estadoAlertas.bloqueado ? "disabled" : ""}>Activar</button>`}
+        </div>`;
+
+    const contenido = card.querySelector("#adminNotifContenido");
+    features.renderNotificaciones(contenido, lista, { alHacerClic: abrirDetalleNotificacion });
+    contenido.insertAdjacentHTML("afterbegin", barra);
+
+    const cerrar = () => overlay.remove();
+    card.querySelector(".close").addEventListener("click", cerrar);
+    overlay.addEventListener("click", (evento) => {
+        if (evento.target === overlay) cerrar();
+    });
+
+    contenido.querySelector("[data-marcar-leidas]")?.addEventListener("click", async () => {
+        try {
+            await features.marcarNotificacionesLeidas(API);
+            await cargarNotificaciones();
+            cerrar();
+            mostrarNotificaciones();
+        } catch (error) {
+            mostrarToast(error.message);
+        }
+    });
+}
+
+async function activarNotificaciones() {
+    try {
+        await features.requestNotificationPermission();
+        mostrarToast("Alertas del navegador activadas.");
+        await cargarNotificaciones();
+        mostrarNotificaciones();
+        features.notify("RunTrash", "Recibirás alertas de la actividad de la plataforma.");
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+function connectAdminEvents() {
+    adminEvents?.();
+    adminEvents = features.connectEvents(API, (event) => {
+        if (event.tipo === "notificaciones_leidas") return;
+        cargarTodo();
+        cargarNotificaciones();
+
+        if (event.tipo === "reporte_creado") {
+            features.notify("Nuevo reporte", "Entró un reporte a la plataforma.");
+        }
+    }, (status) => {
+        const element = document.getElementById("systemStatus");
+        if (element) element.textContent = status === "conectado" ? "Tiempo real" : "Reconectando";
+    });
+}
+
+function mostrarGate(message = "") {
+    document.getElementById("adminLoginGate").hidden = false;
+    document.getElementById("adminApp").hidden = true;
+    const feedback = document.getElementById("adminLoginMessage");
+    feedback.hidden = !message;
+    feedback.textContent = message;
+}
+
+function ocultarGate() {
+    document.getElementById("adminLoginGate").hidden = true;
+    document.getElementById("adminApp").hidden = false;
+}
+
+async function iniciarSesionAdmin(event) {
+    event.preventDefault();
+    const button = document.getElementById("adminLoginButton");
+    const feedback = document.getElementById("adminLoginMessage");
+    const email = document.getElementById("adminLoginEmail").value.trim();
+    const password = document.getElementById("adminLoginPassword").value;
+
+    feedback.hidden = true;
+    button.disabled = true;
+    button.textContent = "Verificando...";
+
+    try {
+        const response = await fetch(`${API}/api/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ correo: email, password, tipo_usuario: "admin" })
+        });
+        const data = await response.json();
+        if (!response.ok || data.usuario?.tipo_usuario !== "admin") {
+            throw new Error(data.mensaje || "Las credenciales no son válidas.");
+        }
+
+        token = data.token;
+        usuarioActual = data.usuario;
+        localStorage.setItem("runtrash_user", JSON.stringify(usuarioActual));
+        localStorage.setItem("runtrash_token", token);
+        document.getElementById("adminLoginPassword").value = "";
+        ocultarGate();
+        await cargarTodo();
+        await cargarNotificaciones();
+        connectAdminEvents();
+    } catch (error) {
+        feedback.hidden = false;
+        feedback.textContent = error.message;
+    } finally {
+        button.disabled = false;
+        button.textContent = "Entrar al panel";
+    }
+}
+
+async function apiFetch(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(options.headers || {})
+        }
+    });
+    const data = await response.json();
+    if (response.status === 401 || response.status === 403) {
+        localStorage.removeItem("runtrash_user");
+        localStorage.removeItem("runtrash_token");
+        token = null;
+        usuarioActual = null;
+        mostrarGate(data.mensaje || "Sesión no autorizada.");
+        throw new Error(data.mensaje || "Sesión no autorizada.");
+    }
+    if (!response.ok) throw new Error(data.mensaje || "La operación no pudo completarse.");
+    return data;
+}
+
+async function cargarTodo() {
+    if (!token || usuarioActual?.tipo_usuario !== "admin") {
+        mostrarGate();
+        return;
+    }
+
+    try {
+        const [summaryData, usersData, configData] = await Promise.all([
+            apiFetch(`${API}/api/admin/resumen`),
+            apiFetch(`${API}/api/admin/usuarios`),
+            apiFetch(`${API}/api/admin/configuracion`)
+        ]);
+        resumen = {
+            ...summaryData.resumen,
+            estados: summaryData.estados,
+            sectores: summaryData.sectores,
+            recientes: summaryData.recientes,
+            usuarios_por_rol: summaryData.usuarios_por_rol
+        };
+        usuarios = usersData.usuarios;
+        configuracion = Object.fromEntries(configData.configuracion.map((item) => [item.clave, item.valor]));
+        renderResumen();
+        renderUsuarios();
+        renderConfiguracion();
+    } catch (error) {
+        mostrarToast(error.message);
+    }
+}
+
+function renderResumen() {
+    document.getElementById("adminUsuarios").textContent = resumen.usuarios || 0;
+    document.getElementById("adminReportes").textContent = resumen.reportes || 0;
+    document.getElementById("adminPendientes").textContent = resumen.estados?.find((item) => item.estado === "pendiente")?.total || 0;
+    document.getElementById("adminHoy").textContent = resumen.reportes_hoy || 0;
+    renderSectores();
+    renderActividad();
+}
+
+function renderSectores() {
+    const sectors = resumen.sectores || [];
+    const container = document.getElementById("adminSectores");
+    if (!sectors.length) {
+        container.innerHTML = '<div class="empty-state compact-empty"><span class="empty-state-icon">📊</span><strong>Sin datos recientes</strong><p>Los reportes por localidad aparecerán aquí.</p></div>';
+        return;
+    }
+    const max = Math.max(...sectors.map((item) => item.total), 1);
+    container.innerHTML = sectors.map((sector) => `
+        <div class="sector-row">
+            <div class="sector-heading"><strong>${features.escapeHTML(sector.sector)}</strong><span>${sector.total} reporte${sector.total === 1 ? "" : "s"}</span></div>
+            <div class="sector-track"><span style="width:${Math.round(sector.total / max * 100)}%"></span></div>
+            <div class="sector-detail"><span>${sector.pendientes} pendiente${sector.pendientes === 1 ? "" : "s"}</span><span>${sector.completados} completado${sector.completados === 1 ? "" : "s"}</span></div>
+        </div>`).join("");
+}
+
+function renderUsuarios() {
+    const body = document.getElementById("adminUsuariosTabla");
+    body.innerHTML = usuarios.map((user) => {
+        const role = user.tipo_usuario === "ciudadano" ? "Ciudadano" : user.tipo_usuario === "operario" ? "Operario" : user.tipo_usuario === "empresa" ? "Empresa" : "Administrador";
+        const detail = user.tipo_usuario === "operario" ? (user.zona_asignada || "Sin zona") : user.tipo_usuario === "empresa" ? (user.nit_empresa || "Sin NIT") : user.codigo_operario || "—";
+        return `<tr class="${user.activo ? "" : "is-disabled"}">
+            <td><div class="table-user"><span>${features.escapeHTML(user.nombre.charAt(0).toUpperCase())}</span><div><strong>${features.escapeHTML(user.nombre)}</strong><small>${features.escapeHTML(user.correo)}</small></div></div></td>
+            <td><span class="role-badge role-${features.escapeHTML(user.tipo_usuario)}">${role}</span></td>
+            <td>${features.escapeHTML(detail)}</td>
+            <td>${user.reportes}</td>
+            <td><span class="account-status ${user.activo ? "is-active" : "is-inactive"}">${user.activo ? "Activo" : "Inactivo"}</span></td>
+            <td><div class="table-actions">${user.tipo_usuario !== "admin" ? `<button class="table-action" type="button" onclick="editarUsuarioAdmin(${Number(user.id)})">Editar</button><button class="table-action" type="button" onclick="restablecerPasswordAdmin(${Number(user.id)})">Clave</button>` : ""}${Number(user.id) !== Number(usuarioActual?.id) ? `<button class="table-action" type="button" onclick="alternarUsuario(${Number(user.id)},${user.activo})">${user.activo ? "Desactivar" : "Activar"}</button>` : `<span class="account-status is-active">Actual</span>`}</div></td>
+        </tr>`;
+    }).join("");
+}
+
+function renderConfiguracion() {
+    const form = document.getElementById("configForm");
+    Object.entries(configuracion).forEach(([key, value]) => {
+        const input = form.elements[key];
+        if (input) input.value = value;
+    });
+}
+
+function renderActividad() {
+    const reports = resumen.recientes || [];
+    const container = document.getElementById("adminActividad");
+    if (!reports.length) {
+        container.innerHTML = '<div class="empty-state compact-empty"><span class="empty-state-icon">🕘</span><strong>Sin actividad reciente</strong></div>';
+        return;
+    }
+    container.innerHTML = reports.map((report) => `
+        <button class="activity-item" type="button" onclick="verReporteAdmin(${Number(report.id)})">
+            <span class="activity-icon ${report.estado === "completado" ? "done" : report.estado === "en proceso" ? "progress" : "pending"}">${report.estado === "completado" ? "✓" : report.estado === "en proceso" ? "↻" : "!"}</span>
+            <div><strong>${features.escapeHTML(report.tipo)}</strong><p>${features.escapeHTML(report.localidad || "Por geolocalizar")} · ${features.escapeHTML(report.ciudadano)}</p></div>
+            <span class="status ${report.estado === "completado" ? "done" : report.estado === "en proceso" ? "progress" : "pending"}">${features.escapeHTML(report.estado)}</span>
+        </button>`).join("");
+}
+
+async function alternarUsuario(id, active) {
+    try {
+        await apiFetch(`${API}/api/admin/usuarios/${id}/estado`, {
+            method: "PATCH",
+            body: JSON.stringify({ activo: !active })
+        });
+        await cargarTodo();
+        mostrarToast(!active ? "Usuario activado." : "Usuario desactivado.");
+    } catch (error) { mostrarToast(error.message); }
+}
+
+function abrirCrearUsuario() {
+    editingUserId = null;
+    document.getElementById("adminModalTitle").textContent = "Crear usuario";
+    document.getElementById("adminModalCard").classList.add("modal-card-wide");
+    document.getElementById("adminModalContent").innerHTML = `
+        <div class="input-group"><label for="nuevoUsuarioNombre">Nombre completo</label><input id="nuevoUsuarioNombre" autocomplete="name"></div>
+        <div class="input-group"><label for="nuevoUsuarioCorreo">Correo</label><input id="nuevoUsuarioCorreo" type="email" autocomplete="email"></div>
+        <div class="input-group"><label for="nuevoUsuarioPassword">Contraseña temporal</label><input id="nuevoUsuarioPassword" type="password" minlength="6" autocomplete="new-password"></div>
+        <div class="input-group"><label for="nuevoUsuarioRol">Rol</label><select id="nuevoUsuarioRol" onchange="cambiarCamposUsuarioAdmin()"><option value="ciudadano">Ciudadano</option><option value="operario">Operario</option><option value="empresa">Empresa</option></select></div>
+        <div class="admin-extra-fields" id="adminCamposOperador" hidden><div class="input-group"><label for="nuevoUsuarioCodigo">Código de operario</label><input id="nuevoUsuarioCodigo"></div><div class="input-group"><label for="nuevoUsuarioZona">Localidad asignada</label><select id="nuevoUsuarioZona"><option value="">Selecciona</option>${features.localidades.map((item) => `<option>${item}</option>`).join("")}</select></div></div>
+        <div class="input-group" id="adminCampoNit" hidden><label for="nuevoUsuarioNit">NIT</label><input id="nuevoUsuarioNit"></div>
+        <button class="admin-primary-button full-admin-button" type="button" onclick="crearUsuarioAdmin()">Crear usuario</button>`;
+    document.getElementById("adminModal").classList.add("show");
+}
+
+function editarUsuarioAdmin(id) {
+    const user = usuarios.find((item) => item.id === id);
+    if (!user) return;
+    abrirCrearUsuario();
+    editingUserId = id;
+    document.getElementById("adminModalTitle").textContent = "Editar usuario";
+    document.getElementById("nuevoUsuarioNombre").value = user.nombre;
+    document.getElementById("nuevoUsuarioCorreo").value = user.correo;
+    document.getElementById("nuevoUsuarioPassword").value = "";
+    document.getElementById("nuevoUsuarioPassword").placeholder = "No es necesaria para editar";
+    document.getElementById("nuevoUsuarioRol").value = user.tipo_usuario;
+    document.getElementById("nuevoUsuarioCodigo").value = user.codigo_operario || "";
+    document.getElementById("nuevoUsuarioZona").value = user.zona_asignada || "";
+    document.getElementById("nuevoUsuarioNit").value = user.nit_empresa || "";
+    cambiarCamposUsuarioAdmin();
+}
+
+function restablecerPasswordAdmin(id) {
+    const user = usuarios.find((item) => item.id === id);
+    if (!user) return;
+    document.getElementById("adminModalTitle").textContent = "Restablecer contraseña";
+    document.getElementById("adminModalContent").innerHTML = `<div class="form-intro"><span>🔐</span><p>Se cerrarán las sesiones activas de <strong>${features.escapeHTML(user.nombre)}</strong>.</p></div><div class="input-group"><label for="passwordAdminTemporal">Contraseña nueva</label><input id="passwordAdminTemporal" type="password" minlength="6" autocomplete="new-password"></div><button class="admin-primary-button full-admin-button" type="button" onclick="enviarPasswordAdmin(${Number(id)})">Actualizar contraseña</button>`;
+    document.getElementById("adminModal").classList.add("show");
+}
+
+async function enviarPasswordAdmin(id) {
+    const password = document.getElementById("passwordAdminTemporal").value;
+    try {
+        await apiFetch(`${API}/api/admin/usuarios/${id}/password`, { method: "PUT", body: JSON.stringify({ password }) });
+        cerrarModal();
+        mostrarToast("Contraseña actualizada.");
+    } catch (error) { mostrarToast(error.message); }
+}
+
+function cambiarCamposUsuarioAdmin() {
+    const role = document.getElementById("nuevoUsuarioRol").value;
+    document.getElementById("adminCamposOperador").hidden = role !== "operario";
+    document.getElementById("adminCampoNit").hidden = role !== "empresa";
+}
+
+async function crearUsuarioAdmin() {
+    const role = document.getElementById("nuevoUsuarioRol").value;
+    const body = {
+        nombre: document.getElementById("nuevoUsuarioNombre").value.trim(),
+        correo: document.getElementById("nuevoUsuarioCorreo").value.trim(),
+        password: document.getElementById("nuevoUsuarioPassword").value,
+        tipo_usuario: role,
+        codigo_operario: document.getElementById("nuevoUsuarioCodigo")?.value.trim() || null,
+        zona_asignada: document.getElementById("nuevoUsuarioZona")?.value || null,
+        nit_empresa: document.getElementById("nuevoUsuarioNit")?.value.trim() || null
+    };
+    try {
+        const endpoint = editingUserId
+            ? `${API}/api/admin/usuarios/${editingUserId}`
+            : `${API}/api/admin/usuarios`;
+        const method = editingUserId ? "PUT" : "POST";
+        await apiFetch(endpoint, { method, body: JSON.stringify(body) });
+        cerrarModal();
+        await cargarTodo();
+        mostrarToast(editingUserId ? "Usuario actualizado correctamente." : "Usuario creado correctamente.");
+    } catch (error) { mostrarToast(error.message); }
+}
+
+async function guardarConfiguracion(event) {
+    event.preventDefault();
+    const button = document.getElementById("saveConfigButton");
+    const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+    button.disabled = true;
+    button.textContent = "Guardando...";
+    try {
+        await apiFetch(`${API}/api/admin/configuracion`, { method: "PUT", body: JSON.stringify(values) });
+        await cargarTodo();
+        mostrarToast("Configuración actualizada.");
+    } catch (error) { mostrarToast(error.message); }
+    finally { button.disabled = false; button.textContent = "Guardar configuración"; }
+}
+
+function verReporteAdmin(id) {
+    const report = resumen.recientes?.find((item) => item.id === id);
+    if (!report) return;
+    document.getElementById("adminModalTitle").textContent = "Reporte del sistema";
+    document.getElementById("adminModalContent").innerHTML = `<div class="detail-grid"><div class="detail-row"><span class="detail-label">Tipo</span><div class="detail-value">${features.escapeHTML(report.tipo)}</div></div><div class="detail-row"><span class="detail-label">Estado</span><div class="detail-value">${features.escapeHTML(report.estado)}</div></div><div class="detail-row"><span class="detail-label">Localidad</span><div class="detail-value">${features.escapeHTML(report.localidad || "Por geolocalizar")}</div></div><div class="detail-row"><span class="detail-label">Ciudadano</span><div class="detail-value">${features.escapeHTML(report.ciudadano)}</div></div></div><button class="admin-primary-button full-admin-button" type="button" onclick="cerrarModal()">Cerrar</button>`;
+    document.getElementById("adminModal").classList.add("show");
+}
+
+function mostrarPerfil() {
+    document.getElementById("adminModalTitle").textContent = "Perfil del administrador";
+    document.getElementById("adminModalContent").innerHTML = `<div class="profile-card"><div class="profile-avatar">A</div><div><h3>${features.escapeHTML(usuarioActual?.nombre || "Administrador")}</h3><p>${features.escapeHTML(usuarioActual?.correo || "")}</p></div></div><div class="detail-row"><span class="detail-label">Permisos</span><div class="detail-value">Usuarios, configuración y estadísticas</div></div><button class="admin-primary-button full-admin-button" type="button" onclick="cerrarModal()">Cerrar</button>`;
+    document.getElementById("adminModal").classList.add("show");
+}
+
+function irA(selector, element) {
+    document.querySelectorAll(".menu a").forEach((item) => { item.classList.remove("active"); item.removeAttribute("aria-current"); });
+    element.classList.add("active"); element.setAttribute("aria-current", "page");
+    document.querySelector(selector).scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function refrescarTodo() {
+    await cargarTodo();
+    mostrarToast("Panel actualizado.");
+}
+
+function cerrarModal(event) {
+    if (!event || event.target === document.getElementById("adminModal")) document.getElementById("adminModal").classList.remove("show");
+}
+
+function mostrarToast(message) {
+    const toast = document.getElementById("toast"); toast.textContent = message; toast.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
+async function cerrarSesion() {
+    try { if (token) await fetch(`${API}/api/logout`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }); }
+    finally { localStorage.removeItem("runtrash_user"); localStorage.removeItem("runtrash_token"); window.location.href = "index.html"; }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    features = window.RunTrashFeatures;
+    document.getElementById("configForm").addEventListener("submit", guardarConfiguracion);
+
+    if (!token || usuarioActual?.tipo_usuario !== "admin") {
+        mostrarGate();
+        return;
+    }
+
+    ocultarGate();
+    document.querySelector(".user-info strong").textContent = usuarioActual.nombre;
+    document.querySelector(".user-info span").textContent = usuarioActual.correo || "Sistema RunTrash";
+    await cargarTodo();
+    await cargarNotificaciones();
+    connectAdminEvents();
+});
+</script>
+</body>
+</html>
