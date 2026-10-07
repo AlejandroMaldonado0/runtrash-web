@@ -2150,6 +2150,21 @@ async function iniciarSesion(){
             return;
         }
 
+        /*
+        El administrador entra por su propio panel, que pide
+        credenciales de nuevo. Antes no habia ruta para "admin":
+        el login aceptaba la cuenta pero no redireccionaba nada,
+        y se quedaba sin hacer nada.
+        */
+        if(usuario.tipo_usuario === "admin"){
+            window.location.href = "admin.html";
+            return;
+        }
+
+        mostrarErrorLogin(
+            "Tu cuenta tiene un rol no habilitado para este acceso."
+        );
+
     } catch(error){
 
         console.error(

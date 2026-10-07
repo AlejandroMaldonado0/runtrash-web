@@ -33,7 +33,42 @@ const corsOrigins = String(process.env.CORS_ORIGINS || '')
 
 app.disable('x-powered-by');
 if (process.env.TRUST_PROXY === 'true') app.set('trust proxy', 1);
+/*
+Politica de seguridad de contenido (CSP).
+
+Por defecto helmet envia:
+    script-src 'self'  y  script-src-attr 'none'
+Eso bloquea los <script> dentro del HTML y los onclick="..." de las
+botoneras, dejando toda la interfaz sin responder. Solo se nota al
+desplegar: en local el servidor estatico no manda esta cabecera.
+
+Por eso se permite 'unsafe-inline' y 'unsafe-eval' en scripts/styles.
+Se mantienen el resto de protecciones (frame-ancestors, base-uri,
+object-src, upgrade-insecure-requests) y los recursos externos de
+Google Fonts y Leaflet.
+
+Para una version endurecida habria que mover los scripts inline a
+archivos .js y registrar los onclick con addEventListener.
+*/
+const cspDirectivas = {
+    defaultSrc: ["'self'"],
+    baseUri: ["'self'"],
+    fontSrc: ["'self'", 'https:', 'data:'],
+    formAction: ["'self'"],
+    frameAncestors: ["'self'"],
+    imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+    objectSrc: ["'none'"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://unpkg.com'],
+    scriptSrcAttr: ["'unsafe-inline'"],
+    styleSrc: ["'self'", "'unsafe-inline'", 'https:', 'https://unpkg.com'],
+    connectSrc: ["'self'", 'https:'],
+    workerSrc: ["'self'", 'blob:'],
+    upgradeInsecureRequests: []
+};
+
 app.use(helmet({
+    contentSecurityPolicy: { directives: cspDirectivas },
+    crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(cors({
