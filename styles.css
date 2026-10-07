@@ -553,11 +553,16 @@ svg {
     border-color: var(--brand-100);
 }
 
+/*
+El modal arranca oculto (display: none) y solo aparece al agregar
+la clase .active desde JS. Sin esto el overlay oscuro tapaba
+siempre la pantalla de login y el modal no se cerraba con la X.
+*/
 .auth-page .modal {
     position: fixed;
     inset: 0;
     z-index: 120;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 24px;

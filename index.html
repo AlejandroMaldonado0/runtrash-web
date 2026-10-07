@@ -2180,22 +2180,28 @@ document.addEventListener("DOMContentLoaded", function(){
 });
 
 
-document
-    .getElementById("modalRegistro")
-    .addEventListener(
-        "click",
-        function(event){
+/* Clic en el fondo oscuro cierra el modal correspondiente */
+for (const [idModal, cerrar] of [
+    ["modalRegistro", "cerrarRegistro"],
+    ["modalRecuperacion", "cerrarRecuperacion"]
+]) {
+    document
+        .getElementById(idModal)
+        .addEventListener("click", function(event){
+            if (event.target === this) window[cerrar]();
+        });
+}
 
-            if(
-                event.target === this
-            ){
+/* Con la tecla Escape tambien se cierra */
+document.addEventListener("keydown", function(event){
+    if (event.key !== "Escape") return;
 
-                cerrarRegistro();
+    const registro = document.getElementById("modalRegistro");
+    const recuperacion = document.getElementById("modalRecuperacion");
 
-            }
-
-        }
-    );
+    if (recuperacion.classList.contains("active")) cerrarRecuperacion();
+    else if (registro.classList.contains("active")) cerrarRegistro();
+});
 
 </script>
 
