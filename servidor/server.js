@@ -151,10 +151,16 @@ en el disco, asi que se leen del bucket bajo demanda.
 if (almacen.modo() === 'local') {
     app.use('/uploads', express.static(uploadsDir));
 } else {
-    app.get('/uploads/*', async (req, res) => {
-        const clave = decodeURIComponent(
-            req.params[0] || req.path.replace(/^\/uploads\/?/, '')
-        );
+    /*
+    Express 5 no acepta comodines con asterisco ("*"). El patron
+    {*clave} si funciona, pero devuelve un arreglo de segmentos
+    ("2026","10","foto.png"), asi que hay que volverlo a unir
+    con "/" para obtener la clave real del bucket.
+    */
+    app.get('/uploads/{*segmentos}', async (req, res) => {
+        const clave = Array.isArray(req.params.segmentos)
+            ? req.params.segmentos.join('/')
+            : String(req.params.segmentos || '');
 
         if (!almacen.claveSegura(clave)) {
             return res.status(400).json({

@@ -131,8 +131,14 @@ async function leer(clave) {
             Bucket: configuracionS3.bucket,
             Key: clave
         }));
+
+        /*
+        El AWS SDK v3 devuelve Body como un stream legible, no como
+        un Buffer. Sin convertirlo, res.send() recibiria un objeto
+        vacio y las fotos no se mostrarian.
+        */
         return {
-            cuerpo: resultado.Body,
+            cuerpo: await resultado.Body.transformToByteArray(),
             tipo: resultado.ContentType || 'image/jpeg'
         };
     }
