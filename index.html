@@ -1472,6 +1472,40 @@ function seleccionarTipo(boton){
 
     }
 
+
+    /*
+    El atributo required se activa solo en el campo que
+    corresponde al rol elegido. Asi un ciudadano no es
+    bloqueado por un campo de operario o de empresa que
+    no le corresponde y ni siquiera ve.
+    */
+    const inputOperario =
+        document.getElementById("codigoOperarioLogin");
+
+    const inputEmpresa =
+        document.getElementById("nitEmpresaLogin");
+
+    if(tipoSeleccionado === "operario"){
+
+        inputOperario.required = true;
+        inputEmpresa.required = false;
+
+    } else {
+
+        inputOperario.required = false;
+
+        if(tipoSeleccionado === "empresa"){
+
+            inputEmpresa.required = true;
+
+        } else {
+
+            inputEmpresa.required = false;
+
+        }
+
+    }
+
 }
 
 
@@ -2076,6 +2110,16 @@ async function iniciarSesion(){
             .getElementById("codigoOperarioLogin")
             .value
             .trim();
+
+        /*
+        El codigo de operario es parte de la identidad de la cuenta.
+        Si se deja vacio, el backend lo toma como "no verificado" y
+        terminaria usando solo el correo y la contrasena.
+        */
+        if(!codigo){
+            mostrarErrorLogin("Ingresa tu codigo de operario.");
+            return;
+        }
     }
 
     if(tipoSeleccionado === "empresa"){
@@ -2083,6 +2127,12 @@ async function iniciarSesion(){
             .getElementById("nitEmpresaLogin")
             .value
             .trim();
+
+        /* Igual que el operario: el NIT no puede quedar vacio. */
+        if(!nit){
+            mostrarErrorLogin("Ingresa el NIT de la empresa.");
+            return;
+        }
     }
 
     try{

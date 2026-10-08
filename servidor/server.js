@@ -917,6 +917,53 @@ app.post('/api/login', authLimiter, async (req, res) => {
             });
         }
 
+        /*
+        Verificacion de identidad por rol. El frontend tambien lo
+        pide, pero validarlo aqui evita que alguien llame la API
+        directamente y entre solo con correo y contrasena.
+
+        Nota: el codigo de operario y el NIT se comparan contra lo
+        que hay en la base. Si la cuenta no tiene ese dato
+        registrado, se avisa para que el administrador lo complete.
+        */
+        if (usuario.tipo_usuario === 'operario') {
+            const codigoEnviado = String(codigo_operario || '').trim();
+
+            if (!codigoEnviado) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Ingresa tu codigo de operario.'
+                });
+            }
+
+            if (!usuario.codigo_operario) {
+                return res.status(403).json({
+                    ok: false,
+                    mensaje:
+                        'Tu cuenta no tiene codigo de operario registrado. Contacta al administrador.'
+                });
+            }
+        }
+
+        if (usuario.tipo_usuario === 'empresa') {
+            const nitEnviado = String(nit_empresa || '').trim();
+
+            if (!nitEnviado) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Ingresa el NIT de la empresa.'
+                });
+            }
+
+            if (!usuario.nit_empresa) {
+                return res.status(403).json({
+                    ok: false,
+                    mensaje:
+                        'Tu cuenta no tiene NIT registrado. Contacta al administrador.'
+                });
+            }
+        }
+
         // El rol se toma de PostgreSQL. El selector de la interfaz es solo
         // una ayuda visual; no debe impedir que la misma cuenta entre desde
         // la web o desde la aplicación.

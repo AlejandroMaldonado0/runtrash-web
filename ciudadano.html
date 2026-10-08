@@ -226,9 +226,7 @@ function renderReportes() {
     } else {
         container.innerHTML = visibles.map((reporte) => {
             const item = reporteSeguro(reporte);
-            const image = reporte.imagen_url
-                ? `<img class="report-thumb" src="${features.escapeHTML(API + reporte.imagen_url)}" alt="Foto del reporte">`
-                : `<div class="report-icon" aria-hidden="true">${iconoTipo(reporte.tipo)}</div>`;
+            const image = features.reporteImagen(API, reporte, "report-thumb", iconoTipo(reporte.tipo));
 
             return `
                 <article class="report-item">
@@ -496,7 +494,7 @@ function verReporte(id) {
             <div class="report-icon" aria-hidden="true">${iconoTipo(report.tipo)}</div>
             <div><span class="status ${claseEstado(report.estado)}">${textoEstado(report.estado)}</span><h3>${item.tipo}</h3><p>${fechaBonita(report.fecha)}</p></div>
         </div>
-        ${report.imagen_url ? `<img class="detail-image" src="${features.escapeHTML(API + report.imagen_url)}" alt="Foto del reporte">` : ""}
+        ${report.imagen_url ? features.reporteImagen(API, report, "detail-image", iconoTipo(report.tipo)) : ""}
         <div class="detail-grid">
             <div class="detail-row"><span class="detail-label">Localidad</span><div class="detail-value">📍 ${item.localidad}</div></div>
             <div class="detail-row"><span class="detail-label">Ubicación</span><div class="detail-value">🧭 ${item.ubicacion}</div></div>

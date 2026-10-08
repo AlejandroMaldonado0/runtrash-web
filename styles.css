@@ -4981,6 +4981,31 @@ body {
     }
 }
 
+/* =========================================================
+   RUNTRASH · FOTOS NO DISPONIBLES
+   Reemplaza el icono de "imagen rota" cuando el archivo ya no
+   existe (reportes antiguos creados antes de usar Neon Storage).
+   ========================================================= */
+.report-thumb-vacio {
+    display: grid;
+    place-items: center;
+    flex: 0 0 54px;
+    width: 54px;
+    height: 54px;
+    color: var(--muted);
+    background: #eef4f1;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 22px;
+}
+
+.detail-image.report-thumb-vacio {
+    width: 100%;
+    height: 190px;
+    font-size: 46px;
+    border-radius: 14px;
+}
+
 /* --- Asistente de recuperacion --- */
 .recuperacion-box {
     max-width: 520px;

@@ -217,9 +217,7 @@ function renderReportes() {
     } else {
         container.innerHTML = visibles.map((report) => {
             const item = reporteSeguro(report);
-            const image = report.imagen_url
-                ? `<img class="report-thumb" src="${features.escapeHTML(API + report.imagen_url)}" alt="Foto del reporte">`
-                : `<div class="report-icon" aria-hidden="true">🗑️</div>`;
+            const image = features.reporteImagen(API, report, "report-thumb", "🗑️");
 
             /*
             Acción rápida según el estado actual. Además, el operario
@@ -281,7 +279,7 @@ function verReporte(id) {
     document.getElementById("modalCard").classList.add("modal-card-wide");
     document.getElementById("detalleContenido").innerHTML = `
         <div class="detail-hero"><div class="report-icon">🗑️</div><div><span class="status ${claseEstado(report.estado)}">${textoEstado(report.estado)}</span><h3>${item.tipo}</h3><p>${fechaBonita(report.fecha)}</p></div></div>
-        ${report.imagen_url ? `<img class="detail-image" src="${features.escapeHTML(API + report.imagen_url)}" alt="Foto del reporte">` : ""}
+        ${report.imagen_url ? features.reporteImagen(API, report, "detail-image", "🗑️") : ""}
         <div class="detail-grid">
             <div class="detail-row"><span class="detail-label">Localidad</span><div class="detail-value">📍 ${item.localidad}</div></div>
             <div class="detail-row"><span class="detail-label">Ubicación</span><div class="detail-value">🧭 ${item.ubicacion}</div></div>

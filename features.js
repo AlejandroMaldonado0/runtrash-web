@@ -191,6 +191,27 @@
             return `https://maps.google.com/maps?q=${encodeURIComponent(`${first.latitud},${first.longitud}`)}&z=14&output=embed`;
         },
 
+        /*
+        Foto de un reporte con respaldo.
+
+        Los reportes antiguos pueden tener una imagen_url que ya no
+        existe (por ejemplo, si el reporte se creo cuando las fotos
+        se guardaban en el disco temporal de Render). En ese caso el
+        navegador muestra el icono de imagen rota, asi que se
+        reemplaza por el icono del tipo de residuo.
+        */
+        reporteImagen(apiBase, reporte, clase = "report-thumb", icono = "🗑️") {
+            if (!reporte?.imagen_url) {
+                return `<div class="${clase} report-thumb-vacio" aria-hidden="true">${icono}</div>`;
+            }
+
+            const url = this.escapeHTML(apiBase + reporte.imagen_url);
+
+            return `<img class="${clase}" src="${url}" alt="Foto del reporte"
+                        loading="lazy"
+                        onerror="this.outerHTML='<div class=&quot;${clase} report-thumb-vacio&quot; aria-hidden=&quot;true&quot;>${icono}</div>'">`;
+        },
+
         sectorFor(report) {
             const explicitSector = report.localidad || report.sector || report.zona_asignada;
             if (explicitSector) return String(explicitSector).trim();
