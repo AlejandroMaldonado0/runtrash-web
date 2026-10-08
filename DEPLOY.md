@@ -184,15 +184,73 @@ cargar. Las siguientes son rápidas. No es un fallo, es el plan gratis.
 
 ### Las fotos se borran al redesplegar
 
-Las imágenes se guardan en el disco del servicio. En el plan gratis ese
-disco no es permanente, así que:
+Este es el punto que más confunde, así que léelo aunque lo demás esté bien.
 
-- Las fotos que ya tengas en tu base de datos **seguirán ahí**.
-- Las imágenes **se pierden** cuando Render redespliega el servicio.
-- Cada cambio de código que subas a GitHub provoca un redespliegue.
+**El problema:** las imágenes se guardan en el disco del servidor. En el
+plan gratis de Render ese disco es **temporal**: cada vez que Render
+redespliega (y lo hace con cada `git push`) se borra.
 
-Para un prototipo o un trabajo de curso está bien. Para producción real
-haría falta almacenamiento externo (Supabase Storage o Cloudinary).
+**Qué se pierde y qué no:**
+
+| Dato | ¿Se pierde? |
+|---|---|
+| Usuarios, reportes, estados, notificaciones | ❌ No (están en Neon) |
+| Las **fotos** de los reportes | ✅ Sí (estaban en el disco) |
+
+**La solución:** RunTrash ya trae soporte para **Neon Object Storage**.
+Con solo agregar 3 variables en Render, las fotos dejan de depender del
+disco y se conservan para siempre.
+
+#### Cómo activarlo (5 minutos)
+
+**Paso 1 · Crear el bucket en Neon**
+
+1. En la consola de Neon, abre tu proyecto.
+2. En el menú de la izquierda haz clic en **Object storage**.
+3. Presiona **Create bucket**.
+4. Nombre: `uploads` (minúsculas, tal cual).
+5. Presiona **Create**.
+
+**Paso 2 · Generar las claves de acceso**
+
+1. Sigue en **Object storage**.
+2. Baja hasta la sección **S3** (o *Access keys*).
+3. Presiona **Create access key**.
+4. Te mostrará dos valores:
+   - **Access key ID** → empieza con algo parecido a `neonst_...`
+   - **Secret access key** → una cadena larga
+
+Copia ambos. El secret **solo se muestra una vez**: cópialo ya.
+
+**Paso 3 · Pegarlos en Render**
+
+1. Ve a tu servicio en Render.
+2. Menú lateral: **Environment**.
+3. Presiona **Add Environment Variable** y agrega:
+
+| Key | Value |
+|---|---|
+| `STORAGE_S3_ENDPOINT` | *(el endpoint S3 que te muestra Neon)* |
+| `STORAGE_S3_ACCESS_KEY_ID` | *(la access key ID)* |
+| `STORAGE_S3_SECRET_ACCESS_KEY` | *(el secret)* |
+
+4. Presiona **Save**, arriba a la derecha.
+5. Arriba a la derecha: **Manual Deploy** → **Deploy latest commit**.
+
+**Paso 4 · Confirmar**
+
+En los logs del deploy debe aparecer:
+
+```
+Imágenes: almacenamiento s3 (bucket uploads en us-east-2)
+```
+
+Si aparece `(disco local, se perderan al redespliegar)`, es que falta
+alguna variable.
+
+> **Nota sobre seguridad:** las URLs de las fotos son públicas para quien
+> tenga el enlace (igual que antes). Si necesitas que solo los usuarios
+> con sesión puedan verlas, dilo y lo ajusto.
 
 ### La base de datos también se pausa
 

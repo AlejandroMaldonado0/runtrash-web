@@ -14,6 +14,7 @@ const {
     verifyPassword,
     hashSessionToken
 } = require('./lib/security');
+const almacen = require('./lib/almacen');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -142,7 +143,40 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-app.use('/uploads', express.static(uploadsDir));
+/*
+En disco local basta con servir la carpeta. Cuando el
+almacenamiento es remoto (Neon Object Storage) no hay archivo
+en el disco, asi que se leen del bucket bajo demanda.
+*/
+if (almacen.modo() === 'local') {
+    app.use('/uploads', express.static(uploadsDir));
+} else {
+    app.get('/uploads/*', async (req, res) => {
+        const clave = decodeURIComponent(
+            req.params[0] || req.path.replace(/^\/uploads\/?/, '')
+        );
+
+        if (!almacen.claveSegura(clave)) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Ruta de imagen no valida.'
+            });
+        }
+
+        try {
+            const { cuerpo, tipo } = await almacen.leer(clave);
+            res.setHeader('Content-Type', tipo);
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            res.send(cuerpo);
+        } catch (error) {
+            if (error && (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404)) {
+                return res.status(404).json({ ok: false, mensaje: 'Imagen no encontrada.' });
+            }
+            console.error('Error leyendo imagen remota:', error);
+            res.status(500).json({ ok: false, mensaje: 'No se pudo leer la imagen.' });
+        }
+    });
+}
 
 const clientesEventos = new Set();
 
@@ -152,6 +186,22 @@ async function purgarReportesRetirados() {
             "SELECT valor FROM configuracion_sistema WHERE clave = 'retencion_dias'"
         );
         const dias = Number(configuracion.rows[0]?.valor || 90);
+
+        /*
+        Se recuperan las imagenes antes de borrar, para eliminar
+        tambien el archivo del almacenamiento y no acumular
+        imagenes huerfanas.
+        */
+        const aBorrar = await pool.query(
+            `
+            SELECT id, imagen_url
+            FROM reportes
+            WHERE fecha < NOW() - ($1 * INTERVAL '1 day')
+              AND imagen_url IS NOT NULL
+            `,
+            [dias]
+        );
+
         const resultado = await pool.query(
             `
             DELETE FROM reportes
@@ -159,6 +209,20 @@ async function purgarReportesRetirados() {
             `,
             [dias]
         );
+
+        for (const reporte of aBorrar.rows) {
+            try {
+                await almacen.eliminar(
+                    String(reporte.imagen_url).replace(/^\/uploads\//, '')
+                );
+            } catch (errorImagen) {
+                console.error(
+                    `No se pudo borrar la imagen del reporte ${reporte.id}:`,
+                    errorImagen
+                );
+            }
+        }
+
         if (resultado.rowCount > 0) {
             console.log(`Reportes eliminados por retención: ${resultado.rowCount}`);
         }
@@ -314,13 +378,14 @@ const requiereCiudadano = [requiereSesion, requiereRoles('ciudadano')];
 const requiereOperario = [requiereSesion, requiereRoles('operario')];
 const requiereEmpresa = [requiereSesion, requiereRoles('empresa', 'admin')];
 
-function eliminarArchivoTemporal(file) {
-    if (!file || !fs.existsSync(file.path)) return;
-    try {
-        fs.unlinkSync(file.path);
-    } catch (error) {
-        console.error('No se pudo eliminar el archivo temporal:', error);
-    }
+/*
+Con memoryStorage el archivo todavía no existe en disco, así que
+no hay nada que borrar aquí: la imagen solo se escribe cuando la
+peticion es válida. Si ya se guardó y la petición falla después,
+se llama a almacen.eliminar() con la clave devuelta.
+*/
+function eliminarArchivoTemporal(_file) {
+    return;
 }
 
 async function inicializarAdministrador() {
@@ -375,43 +440,19 @@ async function limpiarSesionesExpiradas() {
 =========================================================
 IMÁGENES
 =========================================================
+La extension se normaliza en el fileFilter de multer y la
+clave final la decide lib/almacen (disco o Neon Object Storage).
 */
-
-const storage = multer.diskStorage({
-
-    destination: (_req, _file, callback) => {
-        callback(null, uploadsDir);
-    },
-
-    filename: (_req, file, callback) => {
-
-        const extension =
-            path.extname(file.originalname).toLowerCase();
-
-        const extensionesPermitidas = [
-            '.jpg',
-            '.jpeg',
-            '.png',
-            '.webp'
-        ];
-
-        const extensionFinal =
-            extensionesPermitidas.includes(extension)
-                ? extension
-                : '.jpg';
-
-        const nombreArchivo =
-            `reporte_${Date.now()}_${Math.random()
-                .toString(36)
-                .substring(2, 8)}${extensionFinal}`;
-
-        callback(null, nombreArchivo);
-    }
-});
 
 const upload = multer({
 
-    storage: storage,
+    /*
+    memoryStorage: multer deja la imagen en memoria y la escribe
+    lib/almacen, que decide si va al disco o a Neon Object Storage.
+    Asi el codigo es el mismo en local y en produccion, y no queda
+    ningun archivo huerfano cuando se rechaza la peticion.
+    */
+    storage: multer.memoryStorage(),
 
     limits: {
         fileSize: MAX_UPLOAD_MB * 1024 * 1024
@@ -1333,10 +1374,6 @@ app.post(
 
             if (descripcionNormalizada.length > 100) {
 
-                if (req.file) {
-                    fs.unlinkSync(req.file.path);
-                }
-
                 return res.status(400).json({
                     ok: false,
                     mensaje:
@@ -1392,10 +1429,6 @@ app.post(
 
             if (reportesHoy.rows[0].total >= limiteReportesDiarios) {
 
-                if (req.file) {
-                    fs.unlinkSync(req.file.path);
-                }
-
                 return res.status(429).json({
                     ok: false,
                     mensaje:
@@ -1406,8 +1439,27 @@ app.post(
             let imagen_url = null;
 
             if (req.file) {
-                imagen_url =
-                    `/uploads/${req.file.filename}`;
+                /*
+                multer deja la foto en memoria (req.file.buffer).
+                Se la pasamos a lib/almacen, que escribe en disco
+                local o en Neon Object Storage segun la configuracion,
+                y devuelve la ruta publica.
+                */
+                const extension = path
+                    .extname(req.file.originalname || '')
+                    .toLowerCase();
+
+                const extensionValida = ['.jpg', '.jpeg', '.png', '.webp']
+                    .includes(extension)
+                        ? extension
+                        : '.jpg';
+
+                const clave = await almacen.guardar(
+                    req.file.buffer,
+                    extensionValida
+                );
+
+                imagen_url = `/uploads/${clave}`;
             }
 
             let latitudFinal = null;
@@ -1441,10 +1493,6 @@ app.post(
                 || (longitudFinal !== null && (!Number.isFinite(longitudFinal) || longitudFinal < -180 || longitudFinal > 180));
 
             if (coordenadasIncompletas || coordenadasInvalidas) {
-
-                if (req.file) {
-                    fs.unlinkSync(req.file.path);
-                }
 
                 return res.status(400).json({
                     ok: false,
@@ -1587,12 +1635,22 @@ app.post(
                 error
             );
 
-            if (
-                req.file &&
-                fs.existsSync(req.file.path)
-            ) {
-
-                fs.unlinkSync(req.file.path);
+            /*
+            Si la imagen ya se habia escrito y despues fallo algo
+            (por ejemplo el INSERT), se borra para no dejar archivos
+            huerfanos en el almacenamiento.
+            */
+            if (imagen_url) {
+                try {
+                    await almacen.eliminar(
+                        imagen_url.replace(/^\/uploads\//, '')
+                    );
+                } catch (errorLimpieza) {
+                    console.error(
+                        'No se pudo limpiar la imagen huérfana:',
+                        errorLimpieza
+                    );
+                }
             }
 
             res.status(500).json({
@@ -2817,8 +2875,13 @@ async function iniciarServidor() {
     await purgarReportesRetirados();
 
     const servidor = app.listen(PORT, () => {
+        const info = almacen.resumen();
         console.log('========================================');
         console.log(`RunTrash API ejecutándose en http://localhost:${PORT}`);
+        console.log(`Imágenes: almacenamiento ${info.modo}`
+            + (info.modo === 's3'
+                ? ` (bucket ${info.bucket} en ${info.region})`
+                : ' (disco local, se pierden al redesplegar)'));
         console.log('========================================');
     });
 

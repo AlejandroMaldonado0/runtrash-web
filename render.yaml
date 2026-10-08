@@ -42,3 +42,17 @@ services:
       # Sin servidor de correo, el codigo se muestra en pantalla
       - key: EXPOSER_CODIGO_RECUPERACION
         value: "true"
+      # Las fotos NO se deben guardar en el disco de Render (es temporal).
+      # Pon estos 3 valores de Neon Object Storage para que persistan.
+      - key: STORAGE_PROVIDER
+        value: s3
+      - key: STORAGE_S3_ENDPOINT
+        sync: false
+      - key: STORAGE_S3_BUCKET
+        value: uploads
+      - key: STORAGE_S3_REGION
+        value: us-east-2
+      - key: STORAGE_S3_ACCESS_KEY_ID
+        sync: false
+      - key: STORAGE_S3_SECRET_ACCESS_KEY
+        sync: false
