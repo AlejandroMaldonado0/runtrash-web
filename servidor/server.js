@@ -2804,7 +2804,13 @@ app.use(
 
         res.status(status).json({
             ok: false,
-            mensaje
+            mensaje,
+            // Se expone el detalle solo si se pide explicitamente,
+            // para poder diagnosticar fallos en produccion sin
+            // filtrar informacion sensible por defecto.
+            ...(process.env.DIAGNOSTICO_DETALLE === 'true'
+                ? { detalle: error.message, codigo: error.code || null }
+                : {})
         });
     }
 );
