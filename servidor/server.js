@@ -1346,6 +1346,15 @@ app.post(
     upload.single('imagen'),
     async (req, res) => {
 
+        /*
+        Se declara antes del try porque el bloque catch la usa
+        para borrar la imagen si algo falla mas adelante. Si se
+        declarara dentro, al fallar una validacion early todavia
+        no existiria y saltaria un ReferenceError que taparia
+        el error real.
+        */
+        let imagen_url = null;
+
         try {
 
             const {
@@ -1441,8 +1450,6 @@ app.post(
                         `Alcanzaste el límite de ${limiteReportesDiarios} reportes diarios.`
                 });
             }
-
-            let imagen_url = null;
 
             if (req.file) {
                 /*
