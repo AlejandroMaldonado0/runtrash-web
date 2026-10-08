@@ -25,13 +25,30 @@ necesita ningún cambio.
 
 const PROVEEDOR = String(process.env.STORAGE_PROVIDER || 'local').toLowerCase();
 
+/*
+Limpia un valor de entorno.
+
+Al copiar desde el bloque .env de Neon es facil pegar tambien las
+comillas, por ejemplo:
+    AWS_ENDPOINT_URL_S3="https://...aws.neon.tech"
+Con las comillas dentro, el SDK de S3 lanza "Invalid URL".
+Aqui se quitan comillas, espacios y saltos de linea.
+*/
+function limpiar(valor) {
+    return String(valor ?? '')
+        .trim()
+        .replace(/^["']/, '')
+        .replace(/["']$/, '')
+        .trim();
+}
+
 const configuracionS3 = {
-    endpoint: process.env.STORAGE_S3_ENDPOINT || '',
-    region: process.env.STORAGE_S3_REGION || 'us-east-2',
-    bucket: process.env.STORAGE_S3_BUCKET || 'uploads',
-    accessKeyId: process.env.STORAGE_S3_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.STORAGE_S3_SECRET_ACCESS_KEY || '',
-    forcePathStyle: process.env.STORAGE_S3_FORCE_PATH_STYLE !== 'false'
+    endpoint: limpiar(process.env.STORAGE_S3_ENDPOINT),
+    region: limpiar(process.env.STORAGE_S3_REGION) || 'us-east-2',
+    bucket: limpiar(process.env.STORAGE_S3_BUCKET) || 'uploads',
+    accessKeyId: limpiar(process.env.STORAGE_S3_ACCESS_KEY_ID),
+    secretAccessKey: limpiar(process.env.STORAGE_S3_SECRET_ACCESS_KEY),
+    forcePathStyle: limpiar(process.env.STORAGE_S3_FORCE_PATH_STYLE) !== 'false'
 };
 
 const faltaConfiguracion = [
@@ -40,7 +57,19 @@ const faltaConfiguracion = [
     ['STORAGE_S3_SECRET_ACCESS_KEY', configuracionS3.secretAccessKey]
 ].filter(([, valor]) => !String(valor).trim()).map(([nombre]) => nombre);
 
-const usarS3 = PROVEEDOR === 's3' && faltaConfiguracion.length === 0;
+const endpointValido = (() => {
+    if (!configuracionS3.endpoint) return false;
+    try {
+        const url = new URL(configuracionS3.endpoint);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (error) {
+        return false;
+    }
+})();
+
+const usarS3 = PROVEEDOR === 's3'
+    && faltaConfiguracion.length === 0
+    && endpointValido;
 
 let clienteS3 = null;
 
@@ -49,6 +78,12 @@ if (PROVEEDOR === 's3') {
         console.warn(
             `STORAGE_PROVIDER=s3 pero faltan variables: ${faltaConfiguracion.join(', ')}. `
             + 'Se usara disco local y las imagenes se perderan al redesplegar.'
+        );
+    } else if (!endpointValido) {
+        console.warn(
+            `STORAGE_S3_ENDPOINT no es una URL valida: "${configuracionS3.endpoint}". `
+            + 'Revisa que no tenga comillas ni espacios. '
+            + 'Se usara disco local y las imagenes se perderan al redespliegar.'
         );
     } else {
         const { S3Client } = require('@aws-sdk/client-s3');
