@@ -63,6 +63,19 @@ const cspDirectivas = {
     scriptSrcAttr: ["'unsafe-inline'"],
     styleSrc: ["'self'", "'unsafe-inline'", 'https:', 'https://unpkg.com'],
     connectSrc: ["'self'", 'https:'],
+    /*
+    Sin frame-src, los iframes caen en default-src 'self' y quedan
+    bloqueados. El mapa de cada panel se muestra con un iframe de
+    Google Maps, asi que hay que permitirlo explicitamente.
+    */
+    frameSrc: [
+        "'self'",
+        'https://maps.google.com',
+        'https://www.google.com',
+        'https://maps.googleapis.com',
+        'https://www.openstreetmap.org',
+        'https://www.bing.com'
+    ],
     workerSrc: ["'self'", 'blob:'],
     upgradeInsecureRequests: []
 };
