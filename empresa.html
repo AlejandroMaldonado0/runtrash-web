@@ -229,7 +229,13 @@ function reporteSeguro(reporte) {
 
 async function cargarDatos(silencioso = false, notificar = true) {
     try {
-        const operatorURL = usuarioActual?.empresa_id
+        /*
+        La empresa se resuelve en el servidor desde el token de la
+        sesión (dato fresco de la base). No se usa el empresa_id
+        guardado en localStorage porque puede estar desactualizado
+        y eso dejaba vacío el desplegable de asignación.
+        */
+        const operatorURL = usuarioActual?.tipo_usuario === "admin" && usuarioActual?.empresa_id
             ? `${API}/api/operarios?empresa_id=${encodeURIComponent(usuarioActual.empresa_id)}`
             : `${API}/api/operarios`;
 

@@ -1904,14 +1904,41 @@ app.get('/api/operarios', requiereEmpresa, async (req, res) => {
 
     try {
 
-        const empresaId = req.usuarioAutenticado.tipo_usuario === 'admin'
+        const empresaIdBruto = req.usuarioAutenticado.tipo_usuario === 'admin'
             ? req.query.empresa_id
             : req.usuarioAutenticado.empresa_id;
+        const empresaIdTexto = empresaIdBruto === undefined || empresaIdBruto === null
+            ? ''
+            : String(empresaIdBruto).trim();
+        const empresaId = empresaIdTexto === '' ? null : Number(empresaIdTexto);
 
-        if (!empresaId) {
+        /*
+        Una empresa sin empresa_id (cuenta creada antes del
+        backfill o sesión guardada vieja) igual debe ver a los
+        operarios globales. Devolver [] aquí dejaba vacío el
+        desplegable de asignación aunque sí hubiera operarios.
+        */
+        if (empresaId === null || Number.isNaN(empresaId)) {
+            const resultado = await pool.query(
+                `
+                SELECT
+                    id,
+                    nombre,
+                    correo,
+                    codigo_operario,
+                    zona_asignada,
+                    empresa_id
+                FROM usuarios
+                WHERE tipo_usuario = 'operario'
+                  AND activo = TRUE
+                  AND empresa_id IS NULL
+                ORDER BY nombre
+                `
+            );
+
             return res.json({
                 ok: true,
-                operarios: []
+                operarios: resultado.rows
             });
         }
 
@@ -1930,7 +1957,7 @@ app.get('/api/operarios', requiereEmpresa, async (req, res) => {
             ORDER BY nombre
         `;
 
-        const parametros = [Number(empresaId)];
+        const parametros = [empresaId];
 
         const resultado =
             await pool.query(
